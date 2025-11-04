@@ -5,8 +5,9 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <pthread.h>
+#include <ctype.h> // For isspace()
+#include <time.h>   // For faking timestamps
 #include "common.h"
-
 // --- Define This Storage Server's Details ---
 #define SS_NM_PORT 9001       // Port for NM to connect to
 #define SS_CLIENT_PORT 9002   // Port for Clients to connect to
@@ -19,17 +20,49 @@ const char* my_files[] = {
 int num_files = 2;
 
 
+// --- NEW HELPER: Get File Metadata ---
+/*
+ * Reads a file and calculates its word and character count.
+ * Fills the provided pointers.
+ * Returns 0 on success, -1 on failure.
+ */
+int get_file_metadata(const char* file_path, int* word_count, int* char_count) {
+    FILE* file = fopen(file_path, "r");
+    if (file == NULL) {
+        return -1;
+    }
+
+    *word_count = 0;
+    *char_count = 0;
+    int in_word = 0;
+    char c;
+
+    while ((c = fgetc(file)) != EOF) {
+        (*char_count)++;
+        if (isspace(c)) {
+            in_word = 0;
+        } else if (in_word == 0) {
+            in_word = 1;
+            (*word_count)++;
+        }
+    }
+
+    fclose(file);
+    return 0;
+}
+
+
 /*
  * Thread function to handle a direct connection from a Client
  */
 void* handle_client_request(void* arg) {
+    // (This function is unchanged from the previous step)
     int client_socket = *((int*)arg);
     free(arg);
 
     char buffer[BUFFER_SIZE];
     ssize_t bytes_read;
 
-    // 1. Read the client's request (e.g., "READ_FILE <filename>")
     bytes_read = read(client_socket, buffer, sizeof(buffer) - 1);
     if (bytes_read <= 0) {
         printf("SS (Client-Handler): Client disconnected before request.\n");
@@ -38,7 +71,6 @@ void* handle_client_request(void* arg) {
     }
     buffer[bytes_read] = '\0';
 
-    // 2. Parse the request
     char command[64], filename[256];
     if (sscanf(buffer, "%s %s", command, filename) != 2) {
         printf("SS (Client-Handler): Invalid command format.\n");
@@ -49,11 +81,9 @@ void* handle_client_request(void* arg) {
     if (strcmp(command, "READ_FILE") == 0) {
         printf("SS (Client-Handler): Client requested to read '%s'\n", filename);
 
-        // 3. Construct the full file path
         char file_path[512];
         snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
 
-        // 4. Open the file
         FILE* file = fopen(file_path, "r");
         if (file == NULL) {
             perror("SS (Client-Handler): fopen failed");
@@ -63,7 +93,6 @@ void* handle_client_request(void* arg) {
             return NULL;
         }
 
-        // 5. Read file and stream it to the client
         char file_buffer[BUFFER_SIZE];
         size_t bytes_read_from_file;
         while ((bytes_read_from_file = fread(file_buffer, 1, sizeof(file_buffer), file)) > 0) {
@@ -74,6 +103,37 @@ void* handle_client_request(void* arg) {
         }
         fclose(file);
         printf("SS (Client-Handler): File '%s' sent successfully.\n", filename);
+
+    } else if (strcmp(command, "STREAM_FILE") == 0) {
+        printf("SS (Client-Handler): Client requested to stream '%s'\n", filename);
+
+        char file_path[512];
+        snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
+
+        FILE* file = fopen(file_path, "r");
+        if (file == NULL) {
+            perror("SS (Client-Handler): fopen failed");
+            const char* err_msg = "ERROR: File not found or permission denied.\n";
+            write(client_socket, err_msg, strlen(err_msg));
+            close(client_socket);
+            return NULL;
+        }
+
+        char word_buffer[256]; 
+        while (fscanf(file, "%255s", word_buffer) == 1) {
+            if (write(client_socket, word_buffer, strlen(word_buffer)) < 0) {
+                perror("SS (Client-Stream): write word failed");
+                break;
+            }
+            if (write(client_socket, " ", 1) < 0) {
+                perror("SS (Client-Stream): write space failed");
+                break;
+            }
+            usleep(100000);
+        }
+        write(client_socket, "\n", 1);
+        fclose(file);
+        printf("SS (Client-Handler): File '%s' streamed successfully.\n", filename);
 
     } else {
         printf("SS (Client-Handler): Unknown command '%s'\n", command);
@@ -86,6 +146,7 @@ void* handle_client_request(void* arg) {
  * Main loop for the SS to listen for direct Client connections
  */
 void* start_client_server(void* arg) {
+    // (This function is unchanged from the previous step)
     int server_fd;
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_len = sizeof(client_addr);
@@ -138,13 +199,13 @@ void* start_client_server(void* arg) {
  * Thread function to handle a connection from the Name Server
  */
 void* handle_nm_command(void* arg) {
+    // (This function is UPDATED)
     int nm_socket = *((int*)arg);
     free(arg);
 
     char buffer[BUFFER_SIZE];
     ssize_t bytes_read;
 
-    // 1. Read the NM's command
     bytes_read = read(nm_socket, buffer, sizeof(buffer) - 1);
     if (bytes_read <= 0) {
         printf("SS (NM-Handler): NM disconnected before request.\n");
@@ -153,7 +214,6 @@ void* handle_nm_command(void* arg) {
     }
     buffer[bytes_read] = '\0';
 
-    // 2. Parse the command
     char command[64], filename[256];
     if (sscanf(buffer, "%s %s", command, filename) != 2) {
         printf("SS (NM-Handler): Invalid command format from NM.\n");
@@ -163,11 +223,8 @@ void* handle_nm_command(void* arg) {
 
     if (strcmp(command, "CREATE_FILE") == 0) {
         printf("SS (NM-Handler): NM requested to create '%s'\n", filename);
-
         char file_path[512];
         snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
-
-        // 3. Create the empty file
         FILE* file = fopen(file_path, "w");
         if (file == NULL) {
             perror("SS (NM-Handler): fopen failed");
@@ -179,13 +236,9 @@ void* handle_nm_command(void* arg) {
         }
     
     } else if (strcmp(command, "DELETE_FILE") == 0) {
-        // --- NEW DELETE LOGIC ---
         printf("SS (NM-Handler): NM requested to delete '%s'\n", filename);
-
         char file_path[512];
         snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
-
-        // 3. Delete the file
         if (remove(file_path) == 0) {
             printf("SS (NM-Handler): File '%s' deleted successfully.\n", filename);
             write(nm_socket, "ACK_DELETE_SUCCESS\n", sizeof("ACK_DELETE_SUCCESS\n") - 1);
@@ -193,7 +246,26 @@ void* handle_nm_command(void* arg) {
             perror("SS (NM-Handler): remove failed");
             write(nm_socket, "ACK_DELETE_FAIL\n", sizeof("ACK_DELETE_FAIL\n") - 1);
         }
-        // --- END OF NEW DELETE LOGIC ---
+    
+    } else if (strcmp(command, "GET_METADATA") == 0) {
+        // --- **** NEW METADATA LOGIC **** ---
+        printf("SS (NM-Handler): NM requested metadata for '%s'\n", filename);
+        char file_path[512];
+        snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
+
+        int words = 0, chars = 0;
+        char response_buf[BUFFER_SIZE];
+
+        if (get_file_metadata(file_path, &words, &chars) == 0) {
+            // Fake the timestamp for now, per the example format
+            snprintf(response_buf, sizeof(response_buf), "METADATA_RESPONSE %d %d 2025-10-10 14:32\n", words, chars);
+            printf("  Sending metadata: %s", response_buf);
+        } else {
+            perror("SS (NM-Handler): get_file_metadata failed");
+            snprintf(response_buf, sizeof(response_buf), "METADATA_FAIL\n");
+        }
+        write(nm_socket, response_buf, strlen(response_buf));
+        // --- **** END OF NEW METADATA LOGIC **** ---
 
     } else {
         printf("SS (NM-Handler): Unknown command from NM '%s'\n", command);
@@ -208,6 +280,7 @@ void* handle_nm_command(void* arg) {
  * Main loop for the SS to listen for commands from the Name Server
  */
 void* start_nm_server(void* arg) {
+    // (This function is unchanged from the previous step)
     int server_fd;
     struct sockaddr_in server_addr, nm_addr;
     socklen_t nm_len = sizeof(nm_addr);
@@ -259,6 +332,7 @@ void* start_nm_server(void* arg) {
  * Connects to the Name Server and sends a registration message.
  */
 void register_with_name_server() {
+    // (This function is unchanged from the previous step)
     int sock;
     struct sockaddr_in nm_addr;
     char registration_msg[BUFFER_SIZE];
@@ -300,20 +374,17 @@ void register_with_name_server() {
 }
 
 int main() {
-    // 1. Register with the Name Server
+    // (This function is unchanged from the previous step)
     register_with_name_server();
     
-    // 2. Start the Client-facing server in a new thread
     pthread_t client_server_thread_id;
     if (pthread_create(&client_server_thread_id, NULL, start_client_server, NULL) != 0) {
         perror("SS: Failed to create client server thread");
         exit(EXIT_FAILURE);
     }
 
-    // 3. Start the NM-facing server in the main thread
-    start_nm_server(NULL); // This will loop forever
+    start_nm_server(NULL); 
 
-    // 4. Wait for the client server thread (will never be reached, but good practice)
     pthread_join(client_server_thread_id, NULL);
 
     return 0;

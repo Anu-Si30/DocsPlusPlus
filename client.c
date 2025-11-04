@@ -64,6 +64,66 @@ void fetch_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
     close(ss_sock);
 }
 
+/*
+ * --- NEW FUNCTION FOR STREAM ---
+ * This function connects to the Storage Server and prints the
+ * data as it arrives, simulating a stream.
+ */
+void stream_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
+    int ss_sock;
+    struct sockaddr_in ss_addr;
+
+    printf("--- Connecting to Storage Server at %s:%d for streaming...\n", ss_ip, ss_port);
+
+    // 1. Create socket
+    if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("Client (SS-Stream): socket creation failed");
+        return;
+    }
+
+    // 2. Set up SS address
+    ss_addr.sin_family = AF_INET;
+    ss_addr.sin_port = htons(ss_port);
+    if (inet_pton(AF_INET, ss_ip, &ss_addr.sin_addr) <= 0) {
+        perror("Client (SS-Stream): invalid address");
+        close(ss_sock);
+        return;
+    }
+
+    // 3. Connect to SS
+    if (connect(ss_sock, (struct sockaddr*)&ss_addr, sizeof(ss_addr)) < 0) {
+        perror("Client (SS-Stream): connection to Storage Server failed");
+        close(ss_sock);
+        return;
+    }
+
+    // 4. Send the stream request to the SS
+    char request_msg[BUFFER_SIZE];
+    snprintf(request_msg, sizeof(request_msg), "STREAM_FILE %s\n", filename);
+    if (write(ss_sock, request_msg, strlen(request_msg)) < 0) {
+        perror("Client (SS-Stream): failed to send file request");
+        close(ss_sock);
+        return;
+    }
+
+    // 5. Read the file content back and print to stdout *immediately*
+    char stream_buffer[BUFFER_SIZE];
+    ssize_t bytes_read;
+    printf("--- Start of Stream ---\n");
+    while ((bytes_read = read(ss_sock, stream_buffer, sizeof(stream_buffer) - 1)) > 0) {
+        stream_buffer[bytes_read] = '\0';
+        printf("%s", stream_buffer); // Print the chunk
+        fflush(stdout); // Ensure it prints immediately
+    }
+    printf("--- End of Stream ---\n");
+
+    if (bytes_read < 0) {
+        perror("Client (SS-Stream): read from SS failed");
+    }
+
+    close(ss_sock);
+}
+
 
 /*
  * Connects to the Name Server and returns the socket descriptor.
@@ -110,14 +170,17 @@ void command_loop(int nm_socket) {
             break;
         }
 
-        // --- NEW LOGIC: Parse command *before* sending ---
+        // --- UPDATED LOGIC: Parse command *before* sending ---
         char command[64], arg1[256];
         int is_read_cmd = 0;
+        int is_stream_cmd = 0; // New flag
         
-        // Check if it's a READ command
+        // Check command type
         if (sscanf(command_buffer, "%s %s", command, arg1) == 2) {
             if (strcmp(command, "READ") == 0) {
                 is_read_cmd = 1;
+            } else if (strcmp(command, "STREAM") == 0) { // New check
+                is_stream_cmd = 1;
             }
         }
 
@@ -136,13 +199,17 @@ void command_loop(int nm_socket) {
         response_buffer[bytes_read] = '\0'; // Null-terminate
 
         // 5. Check response and act
-        if (is_read_cmd && strncmp(response_buffer, "SS_LOCATION", 11) == 0) {
-            // This is the special response for our READ command
+        if ((is_read_cmd || is_stream_cmd) && strncmp(response_buffer, "SS_LOCATION", 11) == 0) {
+            // This is the special response for READ or STREAM
             char ss_ip[INET_ADDRSTRLEN];
             int ss_port;
             if (sscanf(response_buffer, "SS_LOCATION %s %d", ss_ip, &ss_port) == 2) {
-                // We got the location, now fetch the file
-                fetch_file_from_ss(ss_ip, ss_port, arg1); // arg1 is the filename
+                // We got the location, now fetch/stream the file
+                if (is_read_cmd) {
+                    fetch_file_from_ss(ss_ip, ss_port, arg1); // arg1 is filename
+                } else if (is_stream_cmd) {
+                    stream_file_from_ss(ss_ip, ss_port, arg1); // arg1 is filename
+                }
             } else {
                 printf("Error: Could not parse SS_LOCATION response.\n");
             }
