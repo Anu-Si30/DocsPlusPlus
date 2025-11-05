@@ -16,13 +16,11 @@ void fetch_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
 
     printf("--- Connecting to Storage Server at %s:%d...\n", ss_ip, ss_port);
 
-    // 1. Create socket
     if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Client (SS): socket creation failed");
         return;
     }
 
-    // 2. Set up SS address
     ss_addr.sin_family = AF_INET;
     ss_addr.sin_port = htons(ss_port);
     if (inet_pton(AF_INET, ss_ip, &ss_addr.sin_addr) <= 0) {
@@ -31,14 +29,12 @@ void fetch_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
         return;
     }
 
-    // 3. Connect to SS
     if (connect(ss_sock, (struct sockaddr*)&ss_addr, sizeof(ss_addr)) < 0) {
         perror("Client (SS): connection to Storage Server failed");
         close(ss_sock);
         return;
     }
 
-    // 4. Send the file request to the SS
     char request_msg[BUFFER_SIZE];
     snprintf(request_msg, sizeof(request_msg), "READ_FILE %s\n", filename);
     if (write(ss_sock, request_msg, strlen(request_msg)) < 0) {
@@ -47,13 +43,12 @@ void fetch_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
         return;
     }
 
-    // 5. Read the file content back and print to stdout
     char file_buffer[BUFFER_SIZE];
     ssize_t bytes_read;
     printf("--- File Content ---\n");
     while ((bytes_read = read(ss_sock, file_buffer, sizeof(file_buffer) - 1)) > 0) {
         file_buffer[bytes_read] = '\0';
-        printf("%s", file_buffer); // Print the chunk
+        printf("%s", file_buffer); 
     }
     printf("\n--- End of File ---\n");
 
@@ -65,7 +60,6 @@ void fetch_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
 }
 
 /*
- * --- NEW FUNCTION FOR STREAM ---
  * This function connects to the Storage Server and prints the
  * data as it arrives, simulating a stream.
  */
@@ -75,13 +69,11 @@ void stream_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
 
     printf("--- Connecting to Storage Server at %s:%d for streaming...\n", ss_ip, ss_port);
 
-    // 1. Create socket
     if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Client (SS-Stream): socket creation failed");
         return;
     }
 
-    // 2. Set up SS address
     ss_addr.sin_family = AF_INET;
     ss_addr.sin_port = htons(ss_port);
     if (inet_pton(AF_INET, ss_ip, &ss_addr.sin_addr) <= 0) {
@@ -90,14 +82,12 @@ void stream_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
         return;
     }
 
-    // 3. Connect to SS
     if (connect(ss_sock, (struct sockaddr*)&ss_addr, sizeof(ss_addr)) < 0) {
         perror("Client (SS-Stream): connection to Storage Server failed");
         close(ss_sock);
         return;
     }
 
-    // 4. Send the stream request to the SS
     char request_msg[BUFFER_SIZE];
     snprintf(request_msg, sizeof(request_msg), "STREAM_FILE %s\n", filename);
     if (write(ss_sock, request_msg, strlen(request_msg)) < 0) {
@@ -106,14 +96,13 @@ void stream_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
         return;
     }
 
-    // 5. Read the file content back and print to stdout *immediately*
     char stream_buffer[BUFFER_SIZE];
     ssize_t bytes_read;
     printf("--- Start of Stream ---\n");
     while ((bytes_read = read(ss_sock, stream_buffer, sizeof(stream_buffer) - 1)) > 0) {
         stream_buffer[bytes_read] = '\0';
-        printf("%s", stream_buffer); // Print the chunk
-        fflush(stdout); // Ensure it prints immediately
+        printf("%s", stream_buffer); 
+        fflush(stdout); 
     }
     printf("--- End of Stream ---\n");
 
@@ -122,6 +111,88 @@ void stream_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
     }
 
     close(ss_sock);
+}
+
+// --- **** NEW: WRITE SESSION FUNCTION **** ---
+/*
+ * Connects to SS and enters the interactive write session.
+ */
+void write_session_to_ss(int nm_socket, const char* ss_ip, int ss_port, const char* filename, int sentence_num) {
+    int ss_sock;
+    struct sockaddr_in ss_addr;
+    char command_buffer[BUFFER_SIZE];
+    char response_buffer[BUFFER_SIZE];
+
+    printf("--- Connecting to Storage Server at %s:%d for writing...\n", ss_ip, ss_port);
+
+    // 1. Connect to SS
+    if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("Client (SS-Write): socket creation failed");
+        return;
+    }
+    ss_addr.sin_family = AF_INET;
+    ss_addr.sin_port = htons(ss_port);
+    if (inet_pton(AF_INET, ss_ip, &ss_addr.sin_addr) <= 0) {
+        perror("Client (SS-Write): invalid address");
+        close(ss_sock);
+        return;
+    }
+    if (connect(ss_sock, (struct sockaddr*)&ss_addr, sizeof(ss_addr)) < 0) {
+        perror("Client (SS-Write): connection to Storage Server failed");
+        close(ss_sock);
+        return;
+    }
+
+    // 2. Send the WRITE_START command
+    snprintf(command_buffer, sizeof(command_buffer), "WRITE_START %s %d\n", filename, sentence_num);
+    if (write(ss_sock, command_buffer, strlen(command_buffer)) < 0) {
+        perror("Client (SS-Write): failed to send start command");
+        close(ss_sock);
+        return;
+    }
+    
+    // 3. Enter interactive write loop
+    printf("Write session started. Enter '<word_index> <content>' or 'ETIRW' to finish.\n");
+    while (1) {
+        printf("Write > ");
+        if (fgets(command_buffer, sizeof(command_buffer), stdin) == NULL) {
+            printf("Error reading input. Aborting write.\n");
+            // Send ETIRW to safely close SS-side
+            write(ss_sock, "ETIRW\n", 6);
+            break; // Exit loop on EOF
+        }
+
+        if (write(ss_sock, command_buffer, strlen(command_buffer)) < 0) {
+            perror("Failed to send command to SS. Aborting");
+            break;
+        }
+
+        if (strncmp(command_buffer, "ETIRW", 5) == 0) {
+            // Read final ACK from SS
+            ssize_t bytes_read = read(ss_sock, response_buffer, sizeof(response_buffer) - 1);
+            if (bytes_read > 0) {
+                response_buffer[bytes_read] = '\0';
+                printf("SS: %s", response_buffer);
+            }
+            break; // Exit loop
+        }
+    }
+    
+    close(ss_sock);
+
+    // 4. Tell NM to release the lock
+    printf("Write session ended. Releasing lock...\n");
+    snprintf(command_buffer, sizeof(command_buffer), "RELEASE_LOCK %s %d\n", filename, sentence_num);
+    if (write(nm_socket, command_buffer, strlen(command_buffer)) < 0) {
+        perror("Failed to send RELEASE_LOCK to NM");
+    } else {
+        // Read the final ACK from NM
+        ssize_t bytes_read = read(nm_socket, response_buffer, sizeof(response_buffer) - 1);
+        if (bytes_read > 0) {
+            response_buffer[bytes_read] = '\0';
+            printf("NM: %s", response_buffer);
+        }
+    }
 }
 
 
@@ -170,45 +241,74 @@ void command_loop(int nm_socket) {
             break;
         }
 
-        // --- UPDATED LOGIC: Parse command *before* sending ---
+        // --- **** CORRECTED LOGIC ORDER **** ---
         char command[64], arg1[256];
+        int arg2;
         int is_read_cmd = 0;
-        int is_stream_cmd = 0; // New flag
+        int is_stream_cmd = 0; 
+        int is_write_cmd = 0; 
         
-        // Check command type
-        if (sscanf(command_buffer, "%s %s", command, arg1) == 2) {
+        // --- CHECK FOR 3-ARG COMMANDS FIRST ---
+        if (sscanf(command_buffer, "%s %s %d", command, arg1, &arg2) == 3) {
+             if (strcmp(command, "WRITE") == 0) {
+                is_write_cmd = 1;
+            }
+        // --- THEN CHECK FOR 2-ARG COMMANDS ---
+        } else if (sscanf(command_buffer, "%s %s", command, arg1) == 2) {
             if (strcmp(command, "READ") == 0) {
                 is_read_cmd = 1;
-            } else if (strcmp(command, "STREAM") == 0) { // New check
+            } else if (strcmp(command, "STREAM") == 0) {
                 is_stream_cmd = 1;
             }
         }
+        // --- **** END OF FIX **** ---
 
         // 3. Send the command to the Name Server
         if (write(nm_socket, command_buffer, strlen(command_buffer)) < 0) {
             perror("Failed to send command to NM");
             break;
         }
-
-        // 4. Read the response from the Name Server
+        
+        // Handle interactive WRITE
+        if (is_write_cmd) {
+            ssize_t bytes_read = read(nm_socket, response_buffer, sizeof(response_buffer) - 1);
+            if (bytes_read <= 0) {
+                printf("Name Server closed the connection. Exiting.\n");
+                break;
+            }
+            response_buffer[bytes_read] = '\0';
+            
+            if (strncmp(response_buffer, "SS_LOCATION", 11) == 0) {
+                char ss_ip[INET_ADDRSTRLEN];
+                int ss_port;
+                if (sscanf(response_buffer, "SS_LOCATION %s %d", ss_ip, &ss_port) == 2) {
+                    write_session_to_ss(nm_socket, ss_ip, ss_port, arg1, arg2);
+                } else {
+                    printf("Error: Could not parse SS_LOCATION response.\n");
+                }
+            } else {
+                printf("%s", response_buffer);
+            }
+            continue; 
+        }
+        
+        // 4. Read response for all other commands
         ssize_t bytes_read = read(nm_socket, response_buffer, sizeof(response_buffer) - 1);
         if (bytes_read <= 0) {
             printf("Name Server closed the connection. Exiting.\n");
             break;
         }
-        response_buffer[bytes_read] = '\0'; // Null-terminate
+        response_buffer[bytes_read] = '\0'; 
 
         // 5. Check response and act
         if ((is_read_cmd || is_stream_cmd) && strncmp(response_buffer, "SS_LOCATION", 11) == 0) {
-            // This is the special response for READ or STREAM
             char ss_ip[INET_ADDRSTRLEN];
             int ss_port;
             if (sscanf(response_buffer, "SS_LOCATION %s %d", ss_ip, &ss_port) == 2) {
-                // We got the location, now fetch/stream the file
                 if (is_read_cmd) {
-                    fetch_file_from_ss(ss_ip, ss_port, arg1); // arg1 is filename
+                    fetch_file_from_ss(ss_ip, ss_port, arg1); 
                 } else if (is_stream_cmd) {
-                    stream_file_from_ss(ss_ip, ss_port, arg1); // arg1 is filename
+                    stream_file_from_ss(ss_ip, ss_port, arg1); 
                 }
             } else {
                 printf("Error: Could not parse SS_LOCATION response.\n");

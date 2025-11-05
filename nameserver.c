@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <pthread.h>
-#include <time.h>     // For time() and strftime()
+#include <time.h>     
 #include "common.h"
 
 /*
@@ -25,10 +25,8 @@ typedef struct {
     AccessControl acl[MAX_PERMISSIONS]; 
     int num_permissions;                
 
-    // --- **** NEW/UPDATED FIELDS **** ---
-    char last_accessed_by[256]; // User who last read/streamed
-    char last_accessed_ts[128]; // Timestamp of last read/stream
-    // --- **** END OF UPDATE **** ---
+    char last_accessed_by[256]; 
+    char last_accessed_ts[128]; 
 
     int ss_client_port;      
     char ss_ip_addr[INET_ADDRSTRLEN]; 
@@ -47,25 +45,32 @@ typedef struct {
     int client_socket_fd; 
 } ClientInfo;
 
+// --- **** NEW: STRUCTURE FOR FILE LOCKS **** ---
+typedef struct {
+    char filename[256];
+    int sentence_num;
+    char username[256]; // Who holds the lock
+} FileLock;
 
 #define MAX_FILES 100
 #define MAX_SERVERS 10
 #define MAX_CLIENTS 50 
+#define MAX_LOCKS 50 // Max concurrent sentence locks
 #define EXEC_OUTPUT_BUFFER_SIZE 8192 
 
 FileLocation file_directory[MAX_FILES];
 StorageServer server_list[MAX_SERVERS];
 ClientInfo client_list[MAX_CLIENTS]; 
+FileLock g_file_locks[MAX_LOCKS]; // NEW: Global lock list
 int g_num_files = 0;
 int g_num_servers = 0;
 int g_num_clients = 0; 
+int g_num_locks = 0; // NEW: Global lock counter
 
 pthread_mutex_t g_system_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
-// --- HELPER FUNCTIONS FOR SS COMMUNICATION ---
-// (forward_create_to_ss and forward_delete_to_ss functions are unchanged)
-
+// --- (All helper functions are unchanged from the previous step) ---
 int forward_create_to_ss(const char* ss_ip, int ss_nm_port, const char* filename) {
     int ss_sock;
     struct sockaddr_in ss_addr;
@@ -150,12 +155,6 @@ int forward_delete_to_ss(const char* ss_ip, int ss_nm_port, const char* filename
     }
 }
 
-// --- **** UPDATED METADATA HELPER **** ---
-/*
- * Connects to SS, sends GET_METADATA, and parses the new response.
- * Fills in the pointers provided.
- * Returns 0 on success, -1 on failure.
- */
 int get_metadata_from_ss(const char* ss_ip, int ss_nm_port, const char* filename,
                          int* out_words, int* out_chars, 
                          char* out_created_ts, char* out_modified_ts, int ts_len) 
@@ -184,18 +183,16 @@ int get_metadata_from_ss(const char* ss_ip, int ss_nm_port, const char* filename
         char created_date[64], created_time[64];
         char modified_date[64], modified_time[64];
         
-        // Updated sscanf to match the new SS response (no accessed time)
         int items = sscanf(response, "METADATA_RESPONSE %d %d %63s %63s %63s %63s", 
                  out_words, out_chars, 
                  created_date, created_time,
                  modified_date, modified_time);
         
-        if (items != 6) { // Expect 6 items now
+        if (items != 6) { 
             printf("NM: Failed to parse metadata response: %s\n", response);
             return -1;
         }
         
-        // Combine the date and time strings
         snprintf(out_created_ts, ts_len, "%s %s", created_date, created_time);
         snprintf(out_modified_ts, ts_len, "%s %s", modified_date, modified_time);
         
@@ -205,11 +202,6 @@ int get_metadata_from_ss(const char* ss_ip, int ss_nm_port, const char* filename
     }
 }
 
-// --- **** NEW HELPER: Get File Content from SS **** ---
-/*
- * Connects to SS, sends READ_FILE, and reads the *entire* file content.
- * Returns 0 on success, -1 on failure.
- */
 int get_file_content_from_ss(const char* ss_ip, int ss_client_port, const char* filename, char* out_buffer, int out_len) {
     int ss_sock;
     struct sockaddr_in ss_addr;
@@ -257,8 +249,6 @@ int get_file_content_from_ss(const char* ss_ip, int ss_client_port, const char* 
     return 0; // Success
 }
 
-
-// --- HELPER FUNCTION FOR PERMISSION CHECKING ---
 int check_permission(FileLocation* file, const char* user_requesting, char permission_needed) {
     if (strcmp(file->owner_username, user_requesting) == 0) {
         return 1; 
@@ -274,6 +264,13 @@ int check_permission(FileLocation* file, const char* user_requesting, char permi
         }
     }
     return 0;
+}
+
+
+void get_current_timestamp(char* buffer, int len) {
+    time_t now = time(NULL);
+    struct tm *tm_info = localtime(&now);
+    strftime(buffer, len, "%Y-%m-%d %H:%M", tm_info);
 }
 
 
@@ -305,13 +302,12 @@ void* handle_connection(void* arg) {
 
     // 3. Identify the connection type
     if (strncmp(buffer, "REGISTER_SS", 11) == 0) {
-        // --- **** UPDATED REGISTER_SS LOGIC **** ---
+        // (This section is unchanged)
         printf("New connection from a Storage Server (%s).\n", peer_ip);
         
         int ss_nm_port, ss_client_port;
         char* token;
         char* rest = buffer;
-
         token = strtok_r(rest, " \n", &rest); 
         token = strtok_r(NULL, " \n", &rest); 
         ss_nm_port = token ? atoi(token) : -1;
@@ -344,7 +340,6 @@ void* handle_connection(void* arg) {
                 
                 strncpy(new_file->owner_username, "system", 255); 
                 new_file->num_permissions = 0; 
-                // Initialize new access time fields
                 strncpy(new_file->last_accessed_by, "N/A", 255);
                 strncpy(new_file->last_accessed_ts, "N/A", 127);
                 
@@ -390,7 +385,7 @@ void* handle_connection(void* arg) {
             buffer[strcspn(buffer, "\n")] = 0; // Remove trailing newline
 
             if (strncmp(buffer, "VIEW", 4) == 0) {
-                // --- **** UPDATED VIEW LOGIC **** ---
+                // (This section is unchanged)
                 printf("Client requested VIEW\n");
                 
                 int all_flag = 0;
@@ -425,7 +420,7 @@ void* handle_connection(void* arg) {
                     if (all_flag || has_permission) {
                         if (long_flag) {
                             int words = 0, chars = 0;
-                            char created_ts[128], modified_ts[128]; // No accessed_ts
+                            char created_ts[128], modified_ts[128]; 
                             
                             StorageServer* ss = NULL;
                             for (int j = 0; j < g_num_servers; j++) {
@@ -437,23 +432,20 @@ void* handle_connection(void* arg) {
                             }
                             
                             if (ss != NULL) {
-                                // We must unlock to make a network call
                                 pthread_mutex_unlock(&g_system_mutex);
                                 int res = get_metadata_from_ss(ss->ss_ip_addr, ss->ss_nm_port, file_directory[i].filename, 
                                                                &words, &chars, created_ts, modified_ts, 128);
-                                pthread_mutex_lock(&g_system_mutex); // Re-lock
+                                pthread_mutex_lock(&g_system_mutex);
                                 (void)res; 
                             }
                             
-                            // Use the NM's "last_accessed_ts"
                             offset += sprintf(response_buffer + offset,
                                 "| %-20s | %5d | %5d | %-16s | %-10s |\n",
                                 file_directory[i].filename, words, chars, 
-                                file_directory[i].last_accessed_ts, // <-- Use NM's version
+                                file_directory[i].last_accessed_ts, 
                                 file_directory[i].owner_username);
                             
                         } else {
-                            // Simple listing
                             offset += sprintf(response_buffer + offset, "%s\n", file_directory[i].filename);
                         }
                         files_shown++;
@@ -473,10 +465,9 @@ void* handle_connection(void* arg) {
                 if (offset > 0) {
                     write(client_socket, response_buffer, offset);
                 }
-                // --- **** END OF UPDATED VIEW LOGIC **** ---
             
             } else if (strncmp(buffer, "READ", 4) == 0) {
-                // --- **** UPDATED READ LOGIC **** ---
+                // (This section is unchanged)
                 char filename[256];
                 if (sscanf(buffer, "READ %s", filename) != 1) {
                     const char* err_msg = "ERROR: Invalid READ format. Use: READ <filename>\n";
@@ -500,12 +491,8 @@ void* handle_connection(void* arg) {
                             strncpy(ss_ip, file_directory[i].ss_ip_addr, INET_ADDRSTRLEN);
                             ss_port = file_directory[i].ss_client_port;
                             
-                            // --- **** THE FIX: UPDATE ACCESS TIME **** ---
-                            time_t now = time(NULL);
-                            struct tm *tm_info = localtime(&now);
-                            strftime(file_directory[i].last_accessed_ts, 128, "%Y-%m-%d %H:%M", tm_info);
+                            get_current_timestamp(file_directory[i].last_accessed_ts, 128);
                             strncpy(file_directory[i].last_accessed_by, username, 255);
-                            // --- **** END OF FIX **** ---
                         }
                         break;
                     }
@@ -526,7 +513,7 @@ void* handle_connection(void* arg) {
                 write(client_socket, response_buffer, strlen(response_buffer));
             
             } else if (strncmp(buffer, "STREAM", 6) == 0) {
-                // --- **** UPDATED STREAM LOGIC **** ---
+                // (This section is unchanged)
                 char filename[256];
                 if (sscanf(buffer, "STREAM %s", filename) != 1) {
                     const char* err_msg = "ERROR: Invalid STREAM format. Use: STREAM <filename>\n";
@@ -550,12 +537,8 @@ void* handle_connection(void* arg) {
                             strncpy(ss_ip, file_directory[i].ss_ip_addr, INET_ADDRSTRLEN);
                             ss_port = file_directory[i].ss_client_port;
                             
-                            // --- **** THE FIX: UPDATE ACCESS TIME **** ---
-                            time_t now = time(NULL);
-                            struct tm *tm_info = localtime(&now);
-                            strftime(file_directory[i].last_accessed_ts, 128, "%Y-%m-%d %H:%M", tm_info);
+                            get_current_timestamp(file_directory[i].last_accessed_ts, 128);
                             strncpy(file_directory[i].last_accessed_by, username, 255);
-                            // --- **** END OF FIX **** ---
                         }
                         break;
                     }
@@ -576,7 +559,7 @@ void* handle_connection(void* arg) {
                 write(client_socket, response_buffer, strlen(response_buffer));
 
             } else if (strncmp(buffer, "CREATE", 6) == 0) {
-                // --- **** UPDATED CREATE LOGIC **** ---
+                // (This section is unchanged)
                 char filename[256];
                 if (sscanf(buffer, "CREATE %s", filename) != 1) {
                     const char* err_msg = "ERROR: Invalid CREATE format. Use: CREATE <filename>\n";
@@ -626,7 +609,6 @@ void* handle_connection(void* arg) {
                         strncpy(new_file->owner_username, username, 255); 
                         new_file->num_permissions = 0; 
                         
-                        // Initialize new access time fields
                         strncpy(new_file->last_accessed_by, "N/A", 255);
                         strncpy(new_file->last_accessed_ts, "N/A", 127);
                         
@@ -844,7 +826,7 @@ void* handle_connection(void* arg) {
                 pthread_mutex_unlock(&g_system_mutex);
             
             } else if (strncmp(buffer, "INFO", 4) == 0) {
-                // --- **** UPDATED INFO COMMAND LOGIC **** ---
+                // (This section is unchanged)
                 char filename[256];
                 if (sscanf(buffer, "INFO %s", filename) != 1) {
                     const char* err_msg = "ERROR: Invalid INFO format. Use: INFO <filename>\n";
@@ -907,9 +889,8 @@ void* handle_connection(void* arg) {
                 
                 pthread_mutex_unlock(&g_system_mutex);
                 
-                // Get metadata from SS
                 int words = 0, chars = 0;
-                char created_ts[128], modified_ts[128]; // No accessed_ts
+                char created_ts[128], modified_ts[128]; 
 
                 if (get_metadata_from_ss(ss_ip, ss_nm_port, file_copy.filename, &words, &chars, created_ts, modified_ts, 128) != 0) {
                     const char* err_msg = "ERROR: Failed to retrieve file metadata from Storage Server.\n";
@@ -917,26 +898,22 @@ void* handle_connection(void* arg) {
                     continue;
                 }
 
-                // Format the response to match the PDF example
                 offset += sprintf(response_buffer + offset, "--> File: %s\n", file_copy.filename);
                 offset += sprintf(response_buffer + offset, "--> Owner: %s\n", file_copy.owner_username);
                 offset += sprintf(response_buffer + offset, "--> Created: %s\n", created_ts);
                 offset += sprintf(response_buffer + offset, "--> Last Modified: %s\n", modified_ts);
                 offset += sprintf(response_buffer + offset, "--> Size: %d bytes\n", chars); 
                 
-                // Add ACL info
                 offset += sprintf(response_buffer + offset, "--> Access: %s (RW)\n", file_copy.owner_username);
                 for (int i = 0; i < file_copy.num_permissions; i++) {
-                    offset += sprintf(response_buffer + offset, "-->         %s (%s)\n", 
+                    offset += sprintf(response_buffer + offset, "-->          %s (%s)\n", 
                                       file_copy.acl[i].username, 
                                       file_copy.acl[i].permission == 'W' ? "RW" : "R"); 
                 }
                 
-                // Use the NM's version of last accessed user and time
                 offset += sprintf(response_buffer + offset, "--> Last Accessed: %s by %s\n", file_copy.last_accessed_ts, file_copy.last_accessed_by); 
 
                 write(client_socket, response_buffer, offset);
-                // --- **** END OF INFO COMMAND LOGIC **** ---
             
             } else if (strncmp(buffer, "EXEC", 4) == 0) {
                 // (This section is unchanged)
@@ -959,7 +936,7 @@ void* handle_connection(void* arg) {
                         found_index = i;
                         if (check_permission(&file_directory[i], username, 'R')) {
                             permitted = 1;
-                            file_copy = file_directory[i]; // Make a copy
+                            file_copy = file_directory[i]; 
                             for (int j = 0; j < g_num_servers; j++) {
                                 if (strcmp(server_list[j].ss_ip_addr, file_copy.ss_ip_addr) == 0 &&
                                     server_list[j].ss_client_port == file_copy.ss_client_port) {
@@ -1029,6 +1006,117 @@ void* handle_connection(void* arg) {
                 write(client_socket, output_buffer, output_size);
                 free(output_buffer);
 
+            // --- **** NEW: WRITE and RELEASE_LOCK **** ---
+            
+            } else if (strncmp(buffer, "WRITE", 5) == 0) {
+                char filename[256];
+                int sentence_num;
+                if (sscanf(buffer, "WRITE %s %d", filename, &sentence_num) != 2) {
+                    const char* err_msg = "ERROR: Invalid WRITE format. Use: WRITE <filename> <sentence_num>\n";
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+                printf("Client requested WRITE for '%s', sentence %d\n", filename, sentence_num);
+
+                int found = 0;
+                char ss_ip[INET_ADDRSTRLEN];
+                int ss_port;
+                int permitted = 0;
+                int already_locked = 0;
+                char locking_user[256];
+
+                pthread_mutex_lock(&g_system_mutex);
+                for (int i = 0; i < g_num_files; i++) {
+                    if (strcmp(file_directory[i].filename, filename) == 0) {
+                        found = 1;
+                        if (check_permission(&file_directory[i], username, 'W')) {
+                            permitted = 1;
+                            
+                            // Check for existing lock
+                            for (int j = 0; j < g_num_locks; j++) {
+                                if (strcmp(g_file_locks[j].filename, filename) == 0 && g_file_locks[j].sentence_num == sentence_num) {
+                                    already_locked = 1;
+                                    strncpy(locking_user, g_file_locks[j].username, 255);
+                                    break;
+                                }
+                            }
+
+                            if (!already_locked && g_num_locks < MAX_LOCKS) {
+                                // Grant lock
+                                FileLock* new_lock = &g_file_locks[g_num_locks++];
+                                strncpy(new_lock->filename, filename, 255);
+                                strncpy(new_lock->username, username, 255);
+                                new_lock->sentence_num = sentence_num;
+                                
+                                // Get SS location
+                                strncpy(ss_ip, file_directory[i].ss_ip_addr, INET_ADDRSTRLEN);
+                                ss_port = file_directory[i].ss_client_port;
+                                printf("  Lock granted to '%s'\n", username);
+                            } else if (already_locked) {
+                                // Lock is held
+                            } else {
+                                // Too many locks
+                                already_locked = -1; // Use -1 to signal max locks
+                            }
+                        }
+                        break;
+                    }
+                }
+                pthread_mutex_unlock(&g_system_mutex);
+
+                char response_buffer[BUFFER_SIZE];
+                if (!found) {
+                    snprintf(response_buffer, sizeof(response_buffer), "ERROR: File not found.\n");
+                } else if (!permitted) {
+                    snprintf(response_buffer, sizeof(response_buffer), "ERROR: Access Denied (Write permission required).\n");
+                } else if (already_locked == 1) {
+                    snprintf(response_buffer, sizeof(response_buffer), "ERROR: Sentence is currently locked by '%s'.\n", locking_user);
+                } else if (already_locked == -1) {
+                    snprintf(response_buffer, sizeof(response_buffer), "ERROR: System is at maximum lock capacity. Try again later.\n");
+                } else {
+                    // Success!
+                    snprintf(response_buffer, sizeof(response_buffer), "SS_LOCATION %s %d\n", ss_ip, ss_port);
+                }
+                write(client_socket, response_buffer, strlen(response_buffer));
+            
+            } else if (strncmp(buffer, "RELEASE_LOCK", 12) == 0) {
+                char filename[256];
+                int sentence_num;
+                if (sscanf(buffer, "RELEASE_LOCK %s %d", filename, &sentence_num) != 2) {
+                    const char* err_msg = "ERROR: Invalid RELEASE_LOCK format.\n";
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+
+                printf("Client requested RELEASE_LOCK for '%s', sentence %d\n", filename, sentence_num);
+                pthread_mutex_lock(&g_system_mutex);
+                int lock_index = -1;
+                for (int i = 0; i < g_num_locks; i++) {
+                    if (strcmp(g_file_locks[i].filename, filename) == 0 &&
+                        g_file_locks[i].sentence_num == sentence_num &&
+                        strcmp(g_file_locks[i].username, username) == 0) // Only owner can release
+                    {
+                        lock_index = i;
+                        break;
+                    }
+                }
+
+                if (lock_index != -1) {
+                    // Remove lock by shifting
+                    for (int i = lock_index; i < g_num_locks - 1; i++) {
+                        g_file_locks[i] = g_file_locks[i + 1];
+                    }
+                    g_num_locks--;
+                    printf("  Lock released.\n");
+                    write(client_socket, "ACK_LOCK_RELEASED\n", 18);
+                } else {
+                    printf("  Invalid lock release request.\n");
+                    write(client_socket, "ERROR: You do not hold that lock.\n", 34);
+                }
+                pthread_mutex_unlock(&g_system_mutex);
+
+            // --- **** END OF NEW BLOCKS **** ---
+
             } else {
                 const char* ack = "ERROR: Unknown command.\n";
                 write(client_socket, ack, strlen(ack));
@@ -1050,6 +1138,19 @@ void* handle_connection(void* arg) {
 
     if (client_index != -1) {
         printf("User '%s' disconnected. Removing from list.\n", client_list[client_index].username);
+        // --- **** FIX: Also release any locks held by this user **** ---
+        for (int i = g_num_locks - 1; i >= 0; i--) { // Iterate backwards
+            if (strcmp(g_file_locks[i].username, client_list[client_index].username) == 0) {
+                printf("  User disconnected, releasing lock on %s (sent %d)\n", g_file_locks[i].filename, g_file_locks[i].sentence_num);
+                // Remove lock by shifting
+                for (int j = i; j < g_num_locks - 1; j++) {
+                    g_file_locks[j] = g_file_locks[j + 1];
+                }
+                g_num_locks--;
+            }
+        }
+        // --- **** END OF FIX **** ---
+        
         for (int i = client_index; i < g_num_clients - 1; i++) {
             client_list[i] = client_list[i + 1];
         }

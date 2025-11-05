@@ -23,32 +23,243 @@ const char* my_files[] = {
 };
 int num_files = 2;
 
+// --- **** FIX: Forward Declarations **** ---
+void* handle_nm_command(void* arg);
+void* start_client_server(void* arg);
+// --- **** END OF FIX **** ---
 
-// --- **** UPDATED METADATA HELPER **** ---
+
+// --- **** WORD & SENTENCE LINKED LIST **** ---
+
+typedef struct WordNode {
+    char* word;
+    struct WordNode* next_word;
+    struct WordNode* next_sentence; // Only used by the first word of a sentence
+} WordNode;
+
+// Helper to create a new word node
+WordNode* create_word_node(const char* word) {
+    WordNode* new_node = (WordNode*)malloc(sizeof(WordNode));
+    new_node->word = strdup(word);
+    new_node->next_word = NULL;
+    new_node->next_sentence = NULL;
+    return new_node;
+}
+
+// Helper to check if a character is a sentence delimiter
+int is_delimiter(char c) {
+    return (c == '.' || c == '!' || c == '?');
+}
+
 /*
- * Reads a file's stats and calculates word/char counts.
- * Fills the provided pointers with REAL timestamps.
- * Returns 0 on success, -1 on failure.
+ * Frees the entire document structure
  */
+void free_document(WordNode* doc_head) {
+    WordNode* current_sentence = doc_head;
+    while (current_sentence != NULL) {
+        WordNode* current_word = current_sentence;
+        WordNode* next_sentence = current_sentence->next_sentence;
+        while (current_word != NULL) {
+            WordNode* next_word = current_word->next_word;
+            free(current_word->word);
+            free(current_word);
+            current_word = next_word;
+        }
+        current_sentence = next_sentence;
+    }
+}
+
+/*
+ * Parses the file content into the linked list structure
+ * Returns the head of the first sentence.
+ */
+WordNode* parse_file_to_list(FILE* file) {
+    WordNode* doc_head = NULL;
+    WordNode* current_sentence_head = NULL;
+    WordNode* current_word_node = NULL; // Tracks the *last node added*
+
+    char buffer[256];
+    int buffer_idx = 0;
+    char c;
+
+    while ((c = fgetc(file)) != EOF) {
+        if (isspace(c) || is_delimiter(c)) {
+            // We have a word boundary
+            if (buffer_idx > 0) {
+                if (is_delimiter(c)) { // Add delimiter to the word
+                    buffer[buffer_idx++] = c;
+                }
+                buffer[buffer_idx] = '\0';
+                
+                WordNode* new_node = create_word_node(buffer);
+                
+                if (current_sentence_head == NULL) {
+                    // This is the first word of a new sentence
+                    current_sentence_head = new_node;
+                    if (doc_head == NULL) {
+                        doc_head = current_sentence_head;
+                    } else {
+                        // Link the previous sentence to this one
+                        WordNode* temp_sent = doc_head;
+                        while(temp_sent->next_sentence != NULL) {
+                            temp_sent = temp_sent->next_sentence;
+                        }
+                        temp_sent->next_sentence = current_sentence_head;
+                    }
+                } else {
+                    // This is a subsequent word in the same sentence
+                    current_word_node->next_word = new_node;
+                }
+                current_word_node = new_node;
+                buffer_idx = 0; // Reset buffer
+            }
+            
+            if (is_delimiter(c)) {
+                // This word was the end of a sentence
+                current_sentence_head = NULL;
+                current_word_node = NULL;
+            }
+        } else {
+            // Regular character
+            if (buffer_idx < 255) {
+                buffer[buffer_idx++] = c;
+            }
+        }
+    }
+    // Handle any trailing word (if file doesn't end with delimiter/space)
+    if (buffer_idx > 0) {
+        buffer[buffer_idx] = '\0';
+        WordNode* new_node = create_word_node(buffer);
+        if (current_sentence_head == NULL) {
+            current_sentence_head = new_node;
+            if (doc_head == NULL) doc_head = current_sentence_head;
+        } else {
+            current_word_node->next_word = new_node;
+        }
+    }
+    return doc_head;
+}
+
+/*
+ * Flattens the linked list structure back into a file
+ */
+void flatten_list_to_file(WordNode* doc_head, FILE* file) {
+    WordNode* current_sentence = doc_head;
+    while (current_sentence != NULL) {
+        WordNode* current_word = current_sentence;
+        while (current_word != NULL) {
+            fprintf(file, "%s", current_word->word);
+            if (current_word->next_word != NULL) {
+                fprintf(file, " "); // Add space between words
+            }
+            current_word = current_word->next_word;
+        }
+        current_sentence = current_sentence->next_sentence;
+        if (current_sentence != NULL) {
+            fprintf(file, " "); // Add space between sentences
+        }
+    }
+}
+
+/*
+ * Helper to get the head node of the Nth sentence
+ */
+WordNode* get_sentence(WordNode* doc_head, int sentence_index) {
+    WordNode* current_sentence = doc_head;
+    for (int i = 0; i < sentence_index && current_sentence != NULL; i++) {
+        current_sentence = current_sentence->next_sentence;
+    }
+    return current_sentence;
+}
+
+/*
+ * Inserts a new word at the given index in a sentence.
+ * Returns the new head of the entire document, as it might change.
+ */
+WordNode* insert_word_at(WordNode* doc_head, int sentence_index, int word_index, const char* content) {
+    
+    // --- Fix for inserting into an empty document ---
+    if (doc_head == NULL && sentence_index == 0 && word_index == 0) {
+        printf("SS (Write): Inserting into empty doc\n");
+        WordNode* new_word_node = create_word_node(content);
+        doc_head = new_word_node; // This is now the head of the doc
+        return doc_head;
+    }
+    
+    WordNode* sentence_head = get_sentence(doc_head, sentence_index);
+    
+    // --- Special case: Appending a new sentence ---
+    if (sentence_head == NULL && sentence_index > 0 && word_index == 0) {
+        WordNode* prev_sentence = get_sentence(doc_head, sentence_index - 1);
+        if (prev_sentence != NULL) {
+             printf("SS (Write): Appending new sentence\n");
+             WordNode* new_word_node = create_word_node(content);
+             prev_sentence->next_sentence = new_word_node;
+             return doc_head;
+        } else {
+             printf("SS (Write): Invalid sentence index %d (non-contiguous)\n", sentence_index);
+             return doc_head;
+        }
+    }
+    
+    if (sentence_head == NULL) {
+        printf("SS (Write): Invalid sentence index %d\n", sentence_index);
+        return doc_head; // No change
+    }
+    
+    WordNode* new_word_node = create_word_node(content);
+
+    if (word_index == 0) {
+        // Insert at the beginning of the sentence
+        new_word_node->next_word = sentence_head;
+        new_word_node->next_sentence = sentence_head->next_sentence; 
+        sentence_head->next_sentence = NULL; 
+        
+        if (sentence_index == 0) {
+            doc_head = new_word_node; // New document head
+        } else {
+            WordNode* prev_sentence = get_sentence(doc_head, sentence_index - 1);
+            prev_sentence->next_sentence = new_word_node;
+        }
+        return doc_head;
+    }
+
+    // Insert at index > 0
+    WordNode* current_word = sentence_head;
+    for (int i = 0; i < word_index - 1 && current_word->next_word != NULL; i++) {
+        current_word = current_word->next_word;
+    }
+
+    if (current_word == NULL) {
+        printf("SS (Write): Invalid word index %d\n", word_index);
+        free(new_word_node->word);
+        free(new_word_node);
+        return doc_head; // No change
+    }
+    
+    new_word_node->next_word = current_word->next_word;
+    current_word->next_word = new_word_node;
+    
+    return doc_head;
+}
+
+
+// --- (get_file_metadata helper is unchanged) ---
 int get_file_metadata(const char* file_path, int* word_count, int* char_count, 
                       char* created_ts, char* modified_ts, int ts_len) 
 {
     struct stat file_stat;
-
     if (stat(file_path, &file_stat) != 0) {
         perror("SS: stat failed");
         return -1;
     }
+    *char_count = (int)file_stat.st_size; 
 
-    *char_count = (int)file_stat.st_size; // Get byte count from stat
-
-    // Now, open the file just to count words
     FILE* file = fopen(file_path, "r");
     if (file == NULL) {
         perror("SS: fopen for word count failed");
         return -1;
     }
-
     *word_count = 0;
     int in_word = 0;
     char c;
@@ -62,14 +273,9 @@ int get_file_metadata(const char* file_path, int* word_count, int* char_count,
     }
     fclose(file);
 
-    // Format timestamps
     struct tm *tm_info;
-
-    // Created time (st_ctime)
     tm_info = localtime(&file_stat.st_ctime);
     strftime(created_ts, ts_len, "%Y-%m-%d %H:%M", tm_info);
-
-    // Modified time (st_mtime)
     tm_info = localtime(&file_stat.st_mtime);
     strftime(modified_ts, ts_len, "%Y-%m-%d %H:%M", tm_info);
 
@@ -81,7 +287,6 @@ int get_file_metadata(const char* file_path, int* word_count, int* char_count,
  * Thread function to handle a direct connection from a Client
  */
 void* handle_client_request(void* arg) {
-    // (This function is unchanged)
     int client_socket = *((int*)arg);
     free(arg);
 
@@ -96,72 +301,117 @@ void* handle_client_request(void* arg) {
     }
     buffer[bytes_read] = '\0';
 
-    char command[64], filename[256];
-    if (sscanf(buffer, "%s %s", command, filename) != 2) {
-        printf("SS (Client-Handler): Invalid command format.\n");
-        close(client_socket);
-        return NULL;
-    }
-
-    if (strcmp(command, "READ_FILE") == 0) {
+    char filename[256];
+    int sentence_num, word_index;
+    
+    if (sscanf(buffer, "READ_FILE %s", filename) == 1) {
+        // (This logic is unchanged)
         printf("SS (Client-Handler): Client requested to read '%s'\n", filename);
-
         char file_path[512];
         snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
-
         FILE* file = fopen(file_path, "r");
         if (file == NULL) {
             perror("SS (Client-Handler): fopen failed");
             const char* err_msg = "ERROR: File not found or permission denied.\n";
             write(client_socket, err_msg, strlen(err_msg));
+        } else {
+            char file_buffer[BUFFER_SIZE];
+            size_t bytes_read_from_file;
+            while ((bytes_read_from_file = fread(file_buffer, 1, sizeof(file_buffer), file)) > 0) {
+                if (write(client_socket, file_buffer, bytes_read_from_file) < 0) {
+                    perror("SS (Client-Handler): write to client failed");
+                    break; 
+                }
+            }
+            fclose(file);
+            printf("SS (Client-Handler): File '%s' sent successfully.\n", filename);
+        }
+
+    } else if (sscanf(buffer, "STREAM_FILE %s", filename) == 1) {
+        // (This logic is unchanged)
+        printf("SS (Client-Handler): Client requested to stream '%s'\n", filename);
+        char file_path[512];
+        snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
+        FILE* file = fopen(file_path, "r");
+        if (file == NULL) {
+            perror("SS (Client-Handler): fopen failed");
+            const char* err_msg = "ERROR: File not found or permission denied.\n";
+            write(client_socket, err_msg, strlen(err_msg));
+        } else {
+            char word_buffer[256]; 
+            while (fscanf(file, "%255s", word_buffer) == 1) {
+                if (write(client_socket, word_buffer, strlen(word_buffer)) < 0) break;
+                if (write(client_socket, " ", 1) < 0) break;
+                usleep(100000);
+            }
+            write(client_socket, "\n", 1);
+            fclose(file);
+            printf("SS (Client-Handler): File '%s' streamed successfully.\n", filename);
+        }
+
+    } else if (sscanf(buffer, "WRITE_START %s %d", filename, &sentence_num) == 2) {
+        // (This logic is unchanged)
+        printf("SS (Client-Handler): Client started WRITE for '%s' (sent %d)\n", filename, sentence_num);
+        
+        char file_path[512];
+        snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
+
+        FILE* file_ro = fopen(file_path, "r");
+        if (file_ro == NULL) {
+            perror("SS (Write): Failed to open file for parsing");
+            write(client_socket, "ERROR: File not found\n", 22);
             close(client_socket);
             return NULL;
         }
+        WordNode* doc_head = parse_file_to_list(file_ro);
+        fclose(file_ro);
 
-        char file_buffer[BUFFER_SIZE];
-        size_t bytes_read_from_file;
-        while ((bytes_read_from_file = fread(file_buffer, 1, sizeof(file_buffer), file)) > 0) {
-            if (write(client_socket, file_buffer, bytes_read_from_file) < 0) {
-                perror("SS (Client-Handler): write to client failed");
+        while ((bytes_read = read(client_socket, buffer, sizeof(buffer) - 1)) > 0) {
+            buffer[bytes_read] = '\0';
+            buffer[strcspn(buffer, "\n")] = 0; // Remove newline
+
+            if (strncmp(buffer, "ETIRW", 5) == 0) {
+                printf("SS (Write): Received ETIRW. Finalizing changes.\n");
+                
+                FILE* file_w = fopen(file_path, "w");
+                if (file_w == NULL) {
+                    perror("SS (Write): Failed to open file for writing");
+                    write(client_socket, "ERROR: Failed to save changes\n", 30);
+                    break;
+                }
+                
+                flatten_list_to_file(doc_head, file_w);
+                fclose(file_w);
+                
+                write(client_socket, "ACK_WRITE_SUCCESS\n", sizeof("ACK_WRITE_SUCCESS\n") - 1);
                 break; 
             }
-        }
-        fclose(file);
-        printf("SS (Client-Handler): File '%s' sent successfully.\n", filename);
-
-    } else if (strcmp(command, "STREAM_FILE") == 0) {
-        printf("SS (Client-Handler): Client requested to stream '%s'\n", filename);
-
-        char file_path[512];
-        snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
-
-        FILE* file = fopen(file_path, "r");
-        if (file == NULL) {
-            perror("SS (Client-Handler): fopen failed");
-            const char* err_msg = "ERROR: File not found or permission denied.\n";
-            write(client_socket, err_msg, strlen(err_msg));
-            close(client_socket);
-            return NULL;
-        }
-
-        char word_buffer[256]; 
-        while (fscanf(file, "%255s", word_buffer) == 1) {
-            if (write(client_socket, word_buffer, strlen(word_buffer)) < 0) {
-                perror("SS (Client-Stream): write word failed");
-                break;
+            
+            char* first_space = strchr(buffer, ' ');
+            if (first_space == NULL) {
+                printf("SS (Write): Invalid format. No space. Got: %s\n", buffer);
+                continue; 
             }
-            if (write(client_socket, " ", 1) < 0) {
-                perror("SS (Client-Stream): write space failed");
-                break;
+
+            *first_space = '\0';
+            char* content = first_space + 1;
+            
+            word_index = atoi(buffer); 
+
+            if (word_index < 0) {
+                printf("SS (Write): Invalid index. Got: %d\n", word_index);
+                continue; 
             }
-            usleep(100000);
+            
+            printf("SS (Write): Updating sent %d, word %d with '%s'\n", sentence_num, word_index, content);
+            doc_head = insert_word_at(doc_head, sentence_num, word_index, content);
         }
-        write(client_socket, "\n", 1);
-        fclose(file);
-        printf("SS (Client-Handler): File '%s' streamed successfully.\n", filename);
+        
+        free_document(doc_head);
+        printf("SS (Write): Session for '%s' ended.\n", filename);
 
     } else {
-        printf("SS (Client-Handler): Unknown command '%s'\n", command);
+        printf("SS (Client-Handler): Unknown command '%s'\n", buffer);
     }
     close(client_socket);
     return NULL;
@@ -171,7 +421,7 @@ void* handle_client_request(void* arg) {
  * Main loop for the SS to listen for direct Client connections
  */
 void* start_client_server(void* arg) {
-    // (This function is unchanged)
+    // (This function IS present)
     int server_fd;
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_len = sizeof(client_addr);
@@ -224,12 +474,11 @@ void* start_client_server(void* arg) {
  * Thread function to handle a connection from the Name Server
  */
 void* handle_nm_command(void* arg) {
+    // (This function IS present)
     int nm_socket = *((int*)arg);
     free(arg);
-
     char buffer[BUFFER_SIZE];
     ssize_t bytes_read;
-
     bytes_read = read(nm_socket, buffer, sizeof(buffer) - 1);
     if (bytes_read <= 0) {
         printf("SS (NM-Handler): NM disconnected before request.\n");
@@ -237,16 +486,13 @@ void* handle_nm_command(void* arg) {
         return NULL;
     }
     buffer[bytes_read] = '\0';
-
     char command[64], filename[256];
     if (sscanf(buffer, "%s %s", command, filename) != 2) {
         printf("SS (NM-Handler): Invalid command format from NM.\n");
         close(nm_socket);
         return NULL;
     }
-
     if (strcmp(command, "CREATE_FILE") == 0) {
-        // (This section is unchanged)
         printf("SS (NM-Handler): NM requested to create '%s'\n", filename);
         char file_path[512];
         snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
@@ -259,9 +505,7 @@ void* handle_nm_command(void* arg) {
             printf("SS (NM-Handler): File '%s' created successfully.\n", filename);
             write(nm_socket, "ACK_CREATE_SUCCESS\n", sizeof("ACK_CREATE_SUCCESS\n") - 1);
         }
-    
     } else if (strcmp(command, "DELETE_FILE") == 0) {
-        // (This section is unchanged)
         printf("SS (NM-Handler): NM requested to delete '%s'\n", filename);
         char file_path[512];
         snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
@@ -272,38 +516,27 @@ void* handle_nm_command(void* arg) {
             perror("SS (NM-Handler): remove failed");
             write(nm_socket, "ACK_DELETE_FAIL\n", sizeof("ACK_DELETE_FAIL\n") - 1);
         }
-    
     } else if (strcmp(command, "GET_METADATA") == 0) {
-        // --- **** UPDATED METADATA LOGIC **** ---
         printf("SS (NM-Handler): NM requested metadata for '%s'\n", filename);
         char file_path[512];
         snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
-
         int words = 0, chars = 0;
-        char created_ts[128], modified_ts[128]; // No 'accessed' timestamp
+        char created_ts[128], modified_ts[128];
         char response_buf[BUFFER_SIZE];
-
         if (get_file_metadata(file_path, &words, &chars, created_ts, modified_ts, 128) == 0) {
-            // Send real timestamps AND word count (no accessed time)
             snprintf(response_buf, sizeof(response_buf), 
                 "METADATA_RESPONSE %d %d %s %s\n", 
-                words, chars,
-                created_ts,  // e.g., "2025-11-05 16:30"
-                modified_ts
-            );
+                words, chars, created_ts, modified_ts);
             printf("  Sending metadata: %s", response_buf);
         } else {
             perror("SS (NM-Handler): get_file_metadata failed");
             snprintf(response_buf, sizeof(response_buf), "METADATA_FAIL\n");
         }
         write(nm_socket, response_buf, strlen(response_buf));
-        // --- **** END OF UPDATED METADATA LOGIC **** ---
-
     } else {
         printf("SS (NM-Handler): Unknown command from NM '%s'\n", command);
         write(nm_socket, "ACK_UNKNOWN\n", sizeof("ACK_UNKNOWN\n") - 1);
     }
-
     close(nm_socket);
     return NULL;
 }
@@ -312,7 +545,7 @@ void* handle_nm_command(void* arg) {
  * Main loop for the SS to listen for commands from the Name Server
  */
 void* start_nm_server(void* arg) {
-    // (This function is unchanged)
+    // (This function IS present)
     int server_fd;
     struct sockaddr_in server_addr, nm_addr;
     socklen_t nm_len = sizeof(nm_addr);
@@ -368,39 +601,33 @@ void register_with_name_server() {
     int sock;
     struct sockaddr_in nm_addr;
     char registration_msg[BUFFER_SIZE];
-
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         perror("SS: socket creation failed");
         exit(EXIT_FAILURE);
     }
-
     nm_addr.sin_family = AF_INET;
     nm_addr.sin_port = htons(NAME_SERVER_PORT);
     if (inet_pton(AF_INET, "127.0.0.1", &nm_addr.sin_addr) <= 0) {
         perror("SS: invalid address");
         exit(EXIT_FAILURE);
     }
-
     if (connect(sock, (struct sockaddr*)&nm_addr, sizeof(nm_addr)) < 0) {
         perror("SS: connection to Name Server failed");
         exit(EXIT_FAILURE);
     }
     printf("SS: Connected to Name Server.\n");
-
     int offset = sprintf(registration_msg, "REGISTER_SS %d %d", 
                          SS_NM_PORT, SS_CLIENT_PORT);
     for (int i = 0; i < num_files; i++) {
         offset += sprintf(registration_msg + offset, " %s", my_files[i]);
     }
     sprintf(registration_msg + offset, "\n");
-
     if (write(sock, registration_msg, strlen(registration_msg)) < 0) {
         perror("SS: failed to send registration message");
     } else {
         printf("SS: Sent registration message:\n%s", registration_msg);
     }
-
     close(sock);
     printf("SS: Registration complete.\n");
 }
@@ -408,16 +635,12 @@ void register_with_name_server() {
 int main() {
     // (This function is unchanged)
     register_with_name_server();
-    
     pthread_t client_server_thread_id;
     if (pthread_create(&client_server_thread_id, NULL, start_client_server, NULL) != 0) {
         perror("SS: Failed to create client server thread");
         exit(EXIT_FAILURE);
     }
-
     start_nm_server(NULL); 
-
     pthread_join(client_server_thread_id, NULL);
-
     return 0;
 }
