@@ -52,8 +52,32 @@ typedef struct {
     char username[256]; // Who holds the lock
 } FileLock;
 
+// --- **** NEW: HASH MAP STRUCTURES **** ---
+typedef struct HashNode {
+    char key[256];             // The filename
+    FileLocation file;         // The FileLocation struct
+    struct HashNode* next;     // Pointer to the next node in the chain
+} HashNode;
+
+// --- **** NEW: LRU CACHE STRUCTURES **** ---
+typedef struct CacheNode {
+    char filename[256];
+    FileLocation* file_ptr;     // Pointer to the FileLocation in the main hash map
+    struct CacheNode* prev;
+    struct CacheNode* next;
+} CacheNode;
+
+typedef struct CacheMapEntry {
+    char filename[256];
+    CacheNode* node_ptr;        // Pointer to the node in the linked list
+    struct CacheMapEntry* next;
+} CacheMapEntry;
+
+#define HASH_MAP_SIZE 100 // Size of the main file directory hash map
+#define CACHE_MAP_SIZE 20  // A smaller hash map for the cache
+#define MAX_CACHE_SIZE 10  // Max 10 items in the LRU cache
+
 // --- **** Global Defines **** ---
-#define MAX_FILES 100
 #define MAX_SERVERS 10
 #define MAX_CLIENTS 50 
 #define MAX_LOCKS 50
@@ -62,18 +86,49 @@ typedef struct {
 #define NM_LOG_FILE "nameserver.log"
 
 // --- **** Global Variables **** ---
-FileLocation file_directory[MAX_FILES];
+HashNode* g_file_hash_map[HASH_MAP_SIZE]; // The main file directory
 StorageServer server_list[MAX_SERVERS];
 ClientInfo client_list[MAX_CLIENTS]; 
 FileLock g_file_locks[MAX_LOCKS];
-int g_num_files = 0;
 int g_num_servers = 0;
 int g_num_clients = 0; 
 int g_num_locks = 0;
 
+// --- **** NEW: LRU CACHE GLOBALS **** ---
+CacheMapEntry* g_cache_map[CACHE_MAP_SIZE];
+CacheNode* g_cache_head = NULL;
+CacheNode* g_cache_tail = NULL;
+int g_cache_size = 0;
+
 // --- **** Global Mutexes **** ---
 pthread_mutex_t g_system_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t g_log_mutex = PTHREAD_MUTEX_INITIALIZER; // Mutex for the new file logger
+pthread_mutex_t g_log_mutex = PTHREAD_MUTEX_INITIALIZER; 
+
+
+/*
+ * Simple string hash function (djb2) for main map
+ */
+unsigned long hash_string(const char* str) {
+    unsigned long hash = 5381;
+    int c;
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c; // hash * 33 + c
+    }
+    return hash % HASH_MAP_SIZE;
+}
+
+/*
+ * Simple string hash function (djb2) for cache map
+ */
+unsigned long cache_hash_string(const char* str) {
+     unsigned long hash = 5381;
+    int c;
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c;
+    }
+    return hash % CACHE_MAP_SIZE;
+}
+
 
 /*
  * Writes a formatted, detailed message ONLY to the log file.
@@ -102,22 +157,314 @@ void log_to_file(const char* client_addr, const char* username, const char* form
     va_end(args);
 }
 
+// --- **** HASH MAP HELPER FUNCTIONS **** ---
+
 /*
- * Saves the current file directory state to disk.
- * This function is "unsafe" and MUST be called while g_system_mutex is HELD.
+ * Inserts a FileLocation into the hash map.
+ * "unsafe" - g_system_mutex must be held.
  */
+void hash_map_insert_unsafe(FileLocation file) {
+    unsigned long hash_index = hash_string(file.filename);
+    
+    HashNode* new_node = (HashNode*)malloc(sizeof(HashNode));
+    if (new_node == NULL) {
+        log_to_file("Internal", "NameServer", "CRITICAL: malloc failed for new hash map node.");
+        return;
+    }
+    
+    strncpy(new_node->key, file.filename, sizeof(new_node->key) - 1);
+    new_node->file = file;
+    
+    // Insert at the front of the chain
+    new_node->next = g_file_hash_map[hash_index];
+    g_file_hash_map[hash_index] = new_node;
+}
+
+/*
+ * Finds a FileLocation in the hash map by filename.
+ * Returns a pointer to the FileLocation if found, NULL otherwise.
+ * "unsafe" - g_system_mutex must be held.
+ */
+FileLocation* hash_map_find_unsafe(const char* filename) {
+    unsigned long hash_index = hash_string(filename);
+    HashNode* node = g_file_hash_map[hash_index];
+
+    while (node != NULL) {
+        if (strcmp(node->key, filename) == 0) {
+            return &node->file; // Found it
+        }
+        node = node->next;
+    }
+    return NULL; // Not found
+}
+
+/*
+ * Removes a file from the hash map by filename.
+ * Returns 1 on success, 0 on failure (not found).
+ * "unsafe" - g_system_mutex must be held.
+ */
+int hash_map_delete_unsafe(const char* filename) {
+    unsigned long hash_index = hash_string(filename);
+    HashNode* node = g_file_hash_map[hash_index];
+    HashNode* prev = NULL;
+
+    while (node != NULL) {
+        if (strcmp(node->key, filename) == 0) {
+            // Found it. Now delete it.
+            if (prev == NULL) {
+                // It's the first node in the chain
+                g_file_hash_map[hash_index] = node->next;
+            } else {
+                // It's in the middle or at the end
+                prev->next = node->next;
+            }
+            free(node);
+            return 1; // Success
+        }
+        prev = node;
+        node = node->next;
+    }
+    return 0; // Not found
+}
+
+
+// --- **** LRU CACHE HELPER FUNCTIONS **** ---
+
+/*
+ * Moves a given cache node to the front of the linked list (most recent).
+ * "unsafe" - g_system_mutex must be held.
+ */
+void cache_move_to_front_unsafe(CacheNode* node) {
+    if (node == g_cache_head) {
+        return; // Already at front
+    }
+
+    // Unlink node
+    if (node->prev) node->prev->next = node->next;
+    if (node->next) node->next->prev = node->prev;
+
+    if (node == g_cache_tail && node->prev) {
+        g_cache_tail = node->prev;
+    }
+
+    // Link to front
+    node->next = g_cache_head;
+    node->prev = NULL;
+    if (g_cache_head) {
+        g_cache_head->prev = node;
+    }
+    g_cache_head = node;
+
+    if (g_cache_tail == NULL) {
+        g_cache_tail = node;
+    }
+}
+
+/*
+ * Finds a cache map entry.
+ * "unsafe" - g_system_mutex must be held.
+ */
+CacheMapEntry* cache_map_find_unsafe(const char* filename) {
+    unsigned long hash_index = cache_hash_string(filename);
+    CacheMapEntry* entry = g_cache_map[hash_index];
+    while (entry != NULL) {
+        if (strcmp(entry->filename, filename) == 0) {
+            return entry;
+        }
+        entry = entry->next;
+    }
+    return NULL;
+}
+
+/*
+ * Deletes an entry from the cache hash map.
+ * "unsafe" - g_system_mutex must be held.
+ */
+void cache_map_delete_unsafe(const char* filename) {
+    unsigned long hash_index = cache_hash_string(filename);
+    CacheMapEntry* entry = g_cache_map[hash_index];
+    CacheMapEntry* prev = NULL;
+
+    while (entry != NULL) {
+        if (strcmp(entry->filename, filename) == 0) {
+            if (prev == NULL) {
+                g_cache_map[hash_index] = entry->next;
+            } else {
+                prev->next = entry->next;
+            }
+            free(entry);
+            return;
+        }
+        prev = entry;
+        entry = entry->next;
+    }
+}
+
+/*
+ * Evicts the least recently used item (tail) from the cache.
+ * "unsafe" - g_system_mutex must be held.
+ */
+void cache_evict_last_unsafe() {
+    if (g_cache_tail == NULL) {
+        return; // Cache is empty
+    }
+
+    CacheNode* to_delete = g_cache_tail;
+    
+    // Update tail pointer
+    g_cache_tail = to_delete->prev;
+    if (g_cache_tail) {
+        g_cache_tail->next = NULL;
+    } else {
+        g_cache_head = NULL; // Cache is now empty
+    }
+
+    // Remove from cache hash map
+    cache_map_delete_unsafe(to_delete->filename);
+
+    // Free the node
+    free(to_delete);
+    g_cache_size--;
+    
+    log_to_file("Internal", "NameServer", "CACHE: Evicted item from cache.");
+}
+
+/*
+ * Adds a new node to the front of the cache list.
+ * "unsafe" - g_system_mutex must be held.
+ */
+void cache_add_to_front_unsafe(CacheNode* node) {
+    node->next = g_cache_head;
+    node->prev = NULL;
+    if (g_cache_head) {
+        g_cache_head->prev = node;
+    }
+    g_cache_head = node;
+    if (g_cache_tail == NULL) {
+        g_cache_tail = node;
+    }
+}
+
+/*
+ * Adds a new entry to the cache hash map.
+ * "unsafe" - g_system_mutex must be held.
+ */
+void cache_map_put_unsafe(const char* filename, CacheNode* node_ptr) {
+    unsigned long hash_index = cache_hash_string(filename);
+    CacheMapEntry* new_entry = (CacheMapEntry*)malloc(sizeof(CacheMapEntry));
+    if (new_entry == NULL) {
+        log_to_file("Internal", "NameServer", "CRITICAL: malloc failed for new cache map entry.");
+        return;
+    }
+    strncpy(new_entry->filename, filename, sizeof(new_entry->filename) - 1);
+    new_entry->node_ptr = node_ptr;
+    
+    // Insert at front of chain
+    new_entry->next = g_cache_map[hash_index];
+    g_cache_map[hash_index] = new_entry;
+}
+
+/*
+ * Gets an item from the cache. Returns pointer if hit, NULL if miss.
+ * Moves the item to the front of the list if hit.
+ * "unsafe" - g_system_mutex must be held.
+ */
+FileLocation* cache_get_unsafe(const char* filename) {
+    CacheMapEntry* entry = cache_map_find_unsafe(filename);
+    if (entry != NULL) {
+        // Cache Hit!
+        log_to_file("Internal", "NameServer", "CACHE: HIT for '%s'", filename);
+        cache_move_to_front_unsafe(entry->node_ptr);
+        return entry->node_ptr->file_ptr;
+    }
+    
+    // Cache Miss
+    log_to_file("Internal", "NameServer", "CACHE: MISS for '%s'", filename);
+    return NULL;
+}
+
+/*
+ * Puts an item into the cache.
+ * "unsafe" - g_system_mutex must be held.
+ */
+void cache_put_unsafe(const char* filename, FileLocation* file_ptr) {
+    CacheMapEntry* entry = cache_map_find_unsafe(filename);
+    if (entry != NULL) {
+        // Already in cache, just move to front
+        cache_move_to_front_unsafe(entry->node_ptr);
+        return;
+    }
+
+    // Not in cache, add new entry
+    if (g_cache_size == MAX_CACHE_SIZE) {
+        cache_evict_last_unsafe();
+    }
+
+    // Create new list node
+    CacheNode* new_node = (CacheNode*)malloc(sizeof(CacheNode));
+    if (new_node == NULL) {
+        log_to_file("Internal", "NameServer", "CRITICAL: malloc failed for new cache node.");
+        return;
+    }
+    strncpy(new_node->filename, filename, sizeof(new_node->filename) - 1);
+    new_node->file_ptr = file_ptr;
+
+    cache_add_to_front_unsafe(new_node);
+    cache_map_put_unsafe(filename, new_node);
+    g_cache_size++;
+    log_to_file("Internal", "NameServer", "CACHE: ADD for '%s'", filename);
+}
+
+/*
+ * Deletes an item from the cache (e.g., when file is deleted).
+ * "unsafe" - g_system_mutex must be held.
+ */
+void cache_delete_unsafe(const char* filename) {
+    CacheMapEntry* entry = cache_map_find_unsafe(filename);
+    if (entry != NULL) {
+        CacheNode* node_to_delete = entry->node_ptr;
+        
+        // Unlink from list
+        if (node_to_delete->prev) node_to_delete->prev->next = node_to_delete->next;
+        if (node_to_delete->next) node_to_delete->next->prev = node_to_delete->prev;
+        if (g_cache_head == node_to_delete) g_cache_head = node_to_delete->next;
+        if (g_cache_tail == node_to_delete) g_cache_tail = node_to_delete->prev;
+
+        // Delete from map
+        cache_map_delete_unsafe(filename);
+        
+        // Free node
+        free(node_to_delete);
+        g_cache_size--;
+        log_to_file("Internal", "NameServer", "CACHE: DELETE for '%s'", filename);
+    }
+}
+
+// --- **** PERSISTENCE FUNCTIONS (MODIFIED FOR HASH MAP) **** ---
+
 /*
  * Saves the current file directory state to disk.
- * This function is "unsafe" and MUST be called while g_system_mutex is HELD.
+ * "unsafe" - g_system_mutex must be held.
  */
 void save_registry_to_disk_unsafe() {
     FILE* file = fopen(NM_REGISTRY_FILE, "wb"); // "wb" = Write Binary
     if (file == NULL) {
         perror("NM: (Persistence) Failed to open registry for saving");
-        log_to_file("Internal", "NameServer", "CRITICAL: (Persistence) Failed to open registry for saving: %m"); // %m adds errno string
+        log_to_file("Internal", "NameServer", "CRITICAL: (Persistence) Failed to open registry for saving: %m");
         return;
     }
 
+    // 1. Count the number of files
+    int g_num_files = 0;
+    for (int i = 0; i < HASH_MAP_SIZE; i++) {
+        HashNode* node = g_file_hash_map[i];
+        while (node != NULL) {
+            g_num_files++;
+            node = node->next;
+        }
+    }
+
+    // 2. Write the count
     if (fwrite(&g_num_files, sizeof(int), 1, file) != 1) {
         perror("NM: (Persistence) Failed to write file count to registry");
         log_to_file("Internal", "NameServer", "CRITICAL: (Persistence) Failed to write file count to registry: %m");
@@ -125,12 +472,19 @@ void save_registry_to_disk_unsafe() {
         return;
     }
 
+    // 3. Write each FileLocation struct
     if (g_num_files > 0) {
-        if (fwrite(file_directory, sizeof(FileLocation), g_num_files, file) != g_num_files) {
-            perror("NM: (Persistence) Failed to write file data to registry");
-            log_to_file("Internal", "NameServer", "CRITICAL: (Persistence) Failed to write file data to registry: %m");
-            fclose(file);
-            return;
+        for (int i = 0; i < HASH_MAP_SIZE; i++) {
+            HashNode* node = g_file_hash_map[i];
+            while (node != NULL) {
+                if (fwrite(&node->file, sizeof(FileLocation), 1, file) != 1) {
+                    perror("NM: (Persistence) Failed to write file data to registry");
+                    log_to_file("Internal", "NameServer", "CRITICAL: (Persistence) Failed to write file data to registry: %m");
+                    fclose(file);
+                    return;
+                }
+                node = node->next;
+            }
         }
     }
 
@@ -143,10 +497,6 @@ void save_registry_to_disk_unsafe() {
  * Loads the file directory state from disk on startup.
  * Runs before any threads, so no mutex is needed.
  */
-/*
- * Loads the file directory state from disk on startup.
- * Runs before any threads, so no mutex is needed.
- */
 void load_registry_from_disk() {
     FILE* file = fopen(NM_REGISTRY_FILE, "rb"); // "rb" = Read Binary
     if (file == NULL) {
@@ -155,30 +505,30 @@ void load_registry_from_disk() {
         return;
     }
 
+    int g_num_files = 0;
     if (fread(&g_num_files, sizeof(int), 1, file) != 1) {
         perror("NM: (Persistence) Failed to read file count. Starting fresh");
         log_to_file("Internal", "NameServer", "ERROR: (Persistence) Failed to read file count. Starting fresh.");
-        g_num_files = 0; // Reset on error
         fclose(file);
         return;
     }
 
-    if (g_num_files < 0 || g_num_files > MAX_FILES) {
+    if (g_num_files < 0) {
         printf("NM: (Persistence) Registry file corrupted (count=%d). Starting fresh.\n", g_num_files);
         log_to_file("Internal", "NameServer", "ERROR: (Persistence) Registry file corrupted (count=%d). Starting fresh.", g_num_files);
-        g_num_files = 0;
         fclose(file);
         return;
     }
 
-    if (g_num_files > 0) {
-        if (fread(file_directory, sizeof(FileLocation), g_num_files, file) != g_num_files) {
-            perror("NM: (Persistence) Failed to read file data. Starting fresh");
-            log_to_file("Internal", "NameServer", "ERROR: (Persistence) Failed to read file data. Starting fresh.");
-            g_num_files = 0; // Reset on error
-            fclose(file);
-            return;
+    // Read each FileLocation and insert it into the hash map
+    for (int i = 0; i < g_num_files; i++) {
+        FileLocation temp_file;
+        if (fread(&temp_file, sizeof(FileLocation), 1, file) != 1) {
+            perror("NM: (Persistence) Failed to read file data. Halting load");
+            log_to_file("Internal", "NameServer", "ERROR: (Persistence) Failed to read file data. Halting load.");
+            break; // Stop loading, but keep what we have
         }
+        hash_map_insert_unsafe(temp_file);
     }
 
     fclose(file);
@@ -187,7 +537,7 @@ void load_registry_from_disk() {
 }
 
 
-// --- (SS Forwarding Helper Functions) ---
+// --- (SS Forwarding Helper Functions - UNCHANGED) ---
 
 int forward_create_to_ss(const char* ss_ip, int ss_nm_port, const char* filename) {
     int ss_sock;
@@ -415,7 +765,7 @@ int forward_undo_to_ss(const char* ss_ip, int ss_nm_port, const char* filename) 
     }
 }
 
-// --- (Permission & Time Helpers) ---
+// --- (Permission & Time Helpers - UNCHANGED) ---
 
 int check_permission(FileLocation* file, const char* user_requesting, char permission_needed) {
     if (strcmp(file->owner_username, user_requesting) == 0) {
@@ -506,18 +856,13 @@ void* handle_connection(void* arg) {
         }
 
         while ((token = strtok_r(NULL, " \n", &rest)) != NULL) {
-            int file_exists = 0;
-            for(int i=0; i < g_num_files; i++) {
-                if (strcmp(file_directory[i].filename, token) == 0) {
-                    file_exists = 1;
-                    file_directory[i].ss_client_port = ss_client_port;
-                    strncpy(file_directory[i].ss_ip_addr, peer_ip, INET_ADDRSTRLEN);
-                    printf("  Re-linking existing file: %s\n", token);
-                    log_to_file(client_addr_str, "StorageServer", "INFO: Re-linking existing file '%s'.", token);
-                    break;
-                }
-            }
-            if (!file_exists) {
+            FileLocation* file = hash_map_find_unsafe(token);
+            if (file != NULL) {
+                file->ss_client_port = ss_client_port;
+                strncpy(file->ss_ip_addr, peer_ip, INET_ADDRSTRLEN);
+                printf("  Re-linking existing file: %s\n", token);
+                log_to_file(client_addr_str, "StorageServer", "INFO: Re-linking existing file '%s'.", token);
+            } else {
                  printf("  SS registered new non-persistent file: %s\n", token);
                  log_to_file(client_addr_str, "StorageServer", "INFO: Registered new non-persistent file: %s", token);
             }
@@ -591,46 +936,53 @@ void* handle_connection(void* arg) {
 
                 pthread_mutex_lock(&g_system_mutex);
 
-                for (int i = 0; i < g_num_files; i++) {
-                    int has_permission = check_permission(&file_directory[i], username, 'R');
-                    
-                    if (all_flag || has_permission) {
-                        if (long_flag) {
-                            int words = 0, chars = 0;
-                            char created_ts[128], modified_ts[128]; 
-                            StorageServer* ss = NULL;
-                            for (int j = 0; j < g_num_servers; j++) {
-                                if (strcmp(server_list[j].ss_ip_addr, file_directory[i].ss_ip_addr) == 0 &&
-                                    server_list[j].ss_client_port == file_directory[i].ss_client_port) {
-                                    ss = &server_list[j];
-                                    break;
+                // Iterate over hash map
+                for (int i = 0; i < HASH_MAP_SIZE; i++) {
+                    HashNode* node = g_file_hash_map[i];
+                    while (node != NULL) {
+                        FileLocation* file = &node->file;
+                        int has_permission = check_permission(file, username, 'R');
+                        
+                        if (all_flag || has_permission) {
+                            if (long_flag) {
+                                int words = 0, chars = 0;
+                                char created_ts[128], modified_ts[128]; 
+                                StorageServer* ss = NULL;
+                                for (int j = 0; j < g_num_servers; j++) {
+                                    if (strcmp(server_list[j].ss_ip_addr, file->ss_ip_addr) == 0 &&
+                                        server_list[j].ss_client_port == file->ss_client_port) {
+                                        ss = &server_list[j];
+                                        break;
+                                    }
                                 }
+                                
+                                if (ss != NULL) {
+                                    pthread_mutex_unlock(&g_system_mutex);
+                                    get_metadata_from_ss(ss->ss_ip_addr, ss->ss_nm_port, file->filename, 
+                                                                   &words, &chars, created_ts, modified_ts, 128);
+                                    pthread_mutex_lock(&g_system_mutex);
+                                }
+                                
+                                offset += sprintf(response_buffer + offset,
+                                    "| %-20s | %5d | %5d | %-16s | %-10s |\n",
+                                    file->filename, words, chars, 
+                                    file->last_accessed_ts, 
+                                    file->owner_username);
+                                
+                            } else {
+                                offset += sprintf(response_buffer + offset, "%s\n", file->filename);
                             }
-                            
-                            if (ss != NULL) {
-                                pthread_mutex_unlock(&g_system_mutex);
-                                get_metadata_from_ss(ss->ss_ip_addr, ss->ss_nm_port, file_directory[i].filename, 
-                                                               &words, &chars, created_ts, modified_ts, 128);
-                                pthread_mutex_lock(&g_system_mutex);
-                            }
-                            
-                            offset += sprintf(response_buffer + offset,
-                                "| %-20s | %5d | %5d | %-16s | %-10s |\n",
-                                file_directory[i].filename, words, chars, 
-                                file_directory[i].last_accessed_ts, 
-                                file_directory[i].owner_username);
-                            
-                        } else {
-                            offset += sprintf(response_buffer + offset, "%s\n", file_directory[i].filename);
+                            files_shown++;
                         }
-                        files_shown++;
-                    }
 
-                    if (offset > BUFFER_SIZE - 256) {
-                        write(client_socket, response_buffer, offset);
-                        offset = 0; 
+                        if (offset > BUFFER_SIZE - 256) {
+                            write(client_socket, response_buffer, offset);
+                            offset = 0; 
+                        }
+                        node = node->next;
                     }
                 }
+                
                 pthread_mutex_unlock(&g_system_mutex);
                 
                 if (files_shown == 0 && offset == 0) {
@@ -652,30 +1004,34 @@ void* handle_connection(void* arg) {
                 printf("Client requested READ for '%s'\n", filename);
                 log_to_file(client_addr_str, username, "REQ: READ for '%s'", filename);
 
-                int found = 0;
                 char ss_ip[INET_ADDRSTRLEN];
                 int ss_port;
                 int permitted = 0; 
+                FileLocation* file = NULL;
 
                 pthread_mutex_lock(&g_system_mutex);
-                for (int i = 0; i < g_num_files; i++) {
-                    if (strcmp(file_directory[i].filename, filename) == 0) {
-                        found = 1;
-                        if (check_permission(&file_directory[i], username, 'R')) {
-                            permitted = 1;
-                            strncpy(ss_ip, file_directory[i].ss_ip_addr, INET_ADDRSTRLEN);
-                            ss_port = file_directory[i].ss_client_port;
-                            
-                            get_current_timestamp(file_directory[i].last_accessed_ts, 128);
-                            strncpy(file_directory[i].last_accessed_by, username, 255);
-                        }
-                        break;
+                
+                file = cache_get_unsafe(filename); // Check cache first
+                if (file == NULL) {
+                    file = hash_map_find_unsafe(filename); // Check main map
+                    if (file != NULL) {
+                        cache_put_unsafe(filename, file); // Add to cache
+                    }
+                }
+                
+                if (file != NULL) {
+                    if (check_permission(file, username, 'R')) {
+                        permitted = 1;
+                        strncpy(ss_ip, file->ss_ip_addr, INET_ADDRSTRLEN);
+                        ss_port = file->ss_client_port;
+                        get_current_timestamp(file->last_accessed_ts, 128);
+                        strncpy(file->last_accessed_by, username, 255);
                     }
                 }
                 pthread_mutex_unlock(&g_system_mutex);
 
                 char response_buffer[BUFFER_SIZE];
-                if (!found) {
+                if (file == NULL) {
                     printf("  File not found.\n");
                     log_to_file(client_addr_str, username, "RES: READ for '%s' failed: File not found.", filename);
                     snprintf(response_buffer, sizeof(response_buffer), "ERROR %d: File not found.\n", ERROR_FILE_NOT_FOUND);
@@ -700,29 +1056,34 @@ void* handle_connection(void* arg) {
                 printf("Client requested STREAM for '%s'\n", filename);
                 log_to_file(client_addr_str, username, "REQ: STREAM for '%s'", filename);
 
-                int found = 0;
                 char ss_ip[INET_ADDRSTRLEN];
                 int ss_port;
                 int permitted = 0; 
+                FileLocation* file = NULL;
 
                 pthread_mutex_lock(&g_system_mutex);
-                for (int i = 0; i < g_num_files; i++) {
-                    if (strcmp(file_directory[i].filename, filename) == 0) {
-                        found = 1;
-                        if (check_permission(&file_directory[i], username, 'R')) {
-                            permitted = 1;
-                            strncpy(ss_ip, file_directory[i].ss_ip_addr, INET_ADDRSTRLEN);
-                            ss_port = file_directory[i].ss_client_port;
-                            get_current_timestamp(file_directory[i].last_accessed_ts, 128);
-                            strncpy(file_directory[i].last_accessed_by, username, 255);
-                        }
-                        break;
+                
+                file = cache_get_unsafe(filename); // Check cache first
+                if (file == NULL) {
+                    file = hash_map_find_unsafe(filename); // Check main map
+                    if (file != NULL) {
+                        cache_put_unsafe(filename, file); // Add to cache
+                    }
+                }
+                
+                if (file != NULL) {
+                    if (check_permission(file, username, 'R')) {
+                        permitted = 1;
+                        strncpy(ss_ip, file->ss_ip_addr, INET_ADDRSTRLEN);
+                        ss_port = file->ss_client_port;
+                        get_current_timestamp(file->last_accessed_ts, 128);
+                        strncpy(file->last_accessed_by, username, 255);
                     }
                 }
                 pthread_mutex_unlock(&g_system_mutex);
 
                 char response_buffer[BUFFER_SIZE];
-                if (!found) {
+                if (file == NULL) {
                     printf("  File not found.\n");
                     log_to_file(client_addr_str, username, "RES: STREAM for '%s' failed: File not found.", filename);
                     snprintf(response_buffer, sizeof(response_buffer), "ERROR %d: File not found.\n", ERROR_FILE_NOT_FOUND);
@@ -747,15 +1108,10 @@ void* handle_connection(void* arg) {
                 printf("Client requested CREATE for '%s'\n", filename);
                 log_to_file(client_addr_str, username, "REQ: CREATE for '%s'", filename);
 
-                int found = 0;
                 pthread_mutex_lock(&g_system_mutex);
-                for (int i = 0; i < g_num_files; i++) {
-                    if (strcmp(file_directory[i].filename, filename) == 0) {
-                        found = 1;
-                        break;
-                    }
-                }
-                if (found) {
+                
+                FileLocation* file = hash_map_find_unsafe(filename);
+                if (file != NULL) {
                     pthread_mutex_unlock(&g_system_mutex);
                     log_to_file(client_addr_str, username, "RES: CREATE for '%s' failed: File already exists.", filename);
                     snprintf(err_msg, sizeof(err_msg), "ERROR %d: File already exists.\n", ERROR_FILE_EXISTS);
@@ -775,31 +1131,28 @@ void* handle_connection(void* arg) {
                 int ss_nm_port = server_list[0].ss_nm_port;
                 int ss_client_port = server_list[0].ss_client_port;
                 strncpy(ss_ip, server_list[0].ss_ip_addr, INET_ADDRSTRLEN);
+                
                 pthread_mutex_unlock(&g_system_mutex);
-
                 int result = forward_create_to_ss(ss_ip, ss_nm_port, filename);
 
                 if (result == 0) {
+                    FileLocation new_file;
+                    strncpy(new_file.filename, filename, 255);
+                    new_file.ss_client_port = ss_client_port;
+                    strncpy(new_file.ss_ip_addr, ss_ip, INET_ADDRSTRLEN);
+                    strncpy(new_file.owner_username, username, 255); 
+                    new_file.num_permissions = 0; 
+                    strncpy(new_file.last_accessed_by, "N/A", 255);
+                    strncpy(new_file.last_accessed_ts, "N/A", 127);
+                    
                     pthread_mutex_lock(&g_system_mutex);
-                    if (g_num_files < MAX_FILES) {
-                        FileLocation* new_file = &file_directory[g_num_files++];
-                        strncpy(new_file->filename, filename, 255);
-                        new_file->ss_client_port = ss_client_port;
-                        strncpy(new_file->ss_ip_addr, ss_ip, INET_ADDRSTRLEN);
-                        strncpy(new_file->owner_username, username, 255); 
-                        new_file->num_permissions = 0; 
-                        strncpy(new_file->last_accessed_by, "N/A", 255);
-                        strncpy(new_file->last_accessed_ts, "N/A", 127);
-                        
-                        save_registry_to_disk_unsafe(); // Save persistence
-                        printf("  Successfully registered new file '%s' for owner '%s'\n", filename, username);
-                        log_to_file(client_addr_str, username, "RES: CREATE for '%s' success.", filename);
-                        write(client_socket, "File created successfully.\n", sizeof("File created successfully.\n") - 1);
-                    } else {
-                        log_to_file(client_addr_str, username, "RES: CREATE for '%s' failed: NM file directory is full.", filename);
-                        write(client_socket, "ERROR: NM file directory is full.\n", sizeof("ERROR: NM file directory is full.\n") - 1);
-                    }
+                    hash_map_insert_unsafe(new_file);
+                    save_registry_to_disk_unsafe(); // Save persistence
                     pthread_mutex_unlock(&g_system_mutex);
+
+                    printf("  Successfully registered new file '%s' for owner '%s'\n", filename, username);
+                    log_to_file(client_addr_str, username, "RES: CREATE for '%s' success.", filename);
+                    write(client_socket, "File created successfully.\n", sizeof("File created successfully.\n") - 1);
                 } else {
                     log_to_file(client_addr_str, username, "RES: CREATE for '%s' failed: SS failed to create file.", filename);
                     snprintf(err_msg, sizeof(err_msg), "ERROR %d: Storage Server failed to create file.\n", ERROR_SERVER_ERROR);
@@ -816,33 +1169,32 @@ void* handle_connection(void* arg) {
                 printf("Client requested DELETE for '%s'\n", filename);
                 log_to_file(client_addr_str, username, "REQ: DELETE for '%s'", filename);
 
-                int found_index = -1;
                 char ss_ip[INET_ADDRSTRLEN];
                 int ss_nm_port = -1;
                 int permitted = 0; 
+                FileLocation* file = NULL;
 
                 pthread_mutex_lock(&g_system_mutex);
-                for (int i = 0; i < g_num_files; i++) {
-                    if (strcmp(file_directory[i].filename, filename) == 0) {
-                        found_index = i;
-                        if (strcmp(file_directory[i].owner_username, username) == 0) {
-                            permitted = 1;
-                            for (int j = 0; j < g_num_servers; j++) {
-                                if (strcmp(server_list[j].ss_ip_addr, file_directory[i].ss_ip_addr) == 0 &&
-                                    server_list[j].ss_client_port == file_directory[i].ss_client_port) 
-                                {
-                                    strncpy(ss_ip, server_list[j].ss_ip_addr, INET_ADDRSTRLEN);
-                                    ss_nm_port = server_list[j].ss_nm_port;
-                                    break;
-                                }
+                
+                file = hash_map_find_unsafe(filename); // No cache needed, we're deleting
+                
+                if (file != NULL) {
+                    if (strcmp(file->owner_username, username) == 0) {
+                        permitted = 1;
+                        for (int j = 0; j < g_num_servers; j++) {
+                            if (strcmp(server_list[j].ss_ip_addr, file->ss_ip_addr) == 0 &&
+                                server_list[j].ss_client_port == file->ss_client_port) 
+                            {
+                                strncpy(ss_ip, server_list[j].ss_ip_addr, INET_ADDRSTRLEN);
+                                ss_nm_port = server_list[j].ss_nm_port;
+                                break;
                             }
                         }
-                        break;
                     }
                 }
                 pthread_mutex_unlock(&g_system_mutex);
 
-                if (found_index == -1) {
+                if (file == NULL) {
                     log_to_file(client_addr_str, username, "RES: DELETE for '%s' failed: File not found.", filename);
                     snprintf(err_msg, sizeof(err_msg), "ERROR %d: File not found.\n", ERROR_FILE_NOT_FOUND);
                     write(client_socket, err_msg, strlen(err_msg));
@@ -868,16 +1220,16 @@ void* handle_connection(void* arg) {
 
                 if (result == 0) {
                     pthread_mutex_lock(&g_system_mutex);
-                    printf("  Deleting file at index %d\n", found_index);
-                    for (int i = found_index; i < g_num_files - 1; i++) {
-                        file_directory[i] = file_directory[i + 1];
+                    if (hash_map_delete_unsafe(filename)) {
+                        cache_delete_unsafe(filename); // Evict from cache
+                        save_registry_to_disk_unsafe(); // Save persistence
+                        printf("  Successfully deleted file '%s' from directory.\n", filename);
+                        log_to_file(client_addr_str, username, "RES: DELETE for '%s' success.", filename);
+                        write(client_socket, "File deleted successfully.\n", sizeof("File deleted successfully.\n") - 1);
+                    } else {
+                        printf("  Error: File was not found in hash map during delete.\n");
+                        log_to_file(client_addr_str, username, "ERROR: DELETE for '%s' failed: File not found in map post-check.", filename);
                     }
-                    g_num_files--;
-                    
-                    save_registry_to_disk_unsafe(); // Save persistence
-                    printf("  Successfully deleted file '%s' from directory.\n", filename);
-                    log_to_file(client_addr_str, username, "RES: DELETE for '%s' success.", filename);
-                    write(client_socket, "File deleted successfully.\n", sizeof("File deleted successfully.\n") - 1);
                     pthread_mutex_unlock(&g_system_mutex);
                 } else {
                     log_to_file(client_addr_str, username, "RES: DELETE for '%s' failed: SS failed to delete file.", filename);
@@ -924,15 +1276,14 @@ void* handle_connection(void* arg) {
                 log_to_file(client_addr_str, username, "REQ: ADDACCESS %c for '%s' to user '%s'", perm, target_filename, target_username);
 
                 pthread_mutex_lock(&g_system_mutex);
-                int found_index = -1;
-                for(int i=0; i < g_num_files; i++) {
-                    if (strcmp(file_directory[i].filename, target_filename) == 0) {
-                        found_index = i;
-                        break;
-                    }
+                
+                FileLocation* file = cache_get_unsafe(target_filename);
+                if (file == NULL) {
+                    file = hash_map_find_unsafe(target_filename);
+                    if (file != NULL) cache_put_unsafe(target_filename, file);
                 }
-
-                if (found_index == -1) {
+                
+                if (file == NULL) {
                     pthread_mutex_unlock(&g_system_mutex);
                     log_to_file(client_addr_str, username, "RES: ADDACCESS for '%s' failed: File not found.", target_filename);
                     snprintf(err_msg, sizeof(err_msg), "ERROR %d: File not found.\n", ERROR_FILE_NOT_FOUND);
@@ -940,7 +1291,7 @@ void* handle_connection(void* arg) {
                     continue;
                 }
 
-                if (strcmp(file_directory[found_index].owner_username, username) != 0) {
+                if (strcmp(file->owner_username, username) != 0) {
                     pthread_mutex_unlock(&g_system_mutex);
                     log_to_file(client_addr_str, username, "RES: ADDACCESS for '%s' failed: Not owner.", target_filename);
                     snprintf(err_msg, sizeof(err_msg), "ERROR %d: You are not the owner of this file.\n", ERROR_ACCESS_DENIED);
@@ -948,8 +1299,8 @@ void* handle_connection(void* arg) {
                     continue;
                 }
 
-                if (file_directory[found_index].num_permissions < MAX_PERMISSIONS) {
-                    AccessControl* new_perm = &file_directory[found_index].acl[file_directory[found_index].num_permissions++];
+                if (file->num_permissions < MAX_PERMISSIONS) {
+                    AccessControl* new_perm = &file->acl[file->num_permissions++];
                     strncpy(new_perm->username, target_username, 255);
                     new_perm->permission = perm;
                     
@@ -974,15 +1325,14 @@ void* handle_connection(void* arg) {
                 log_to_file(client_addr_str, username, "REQ: REMACCESS for '%s' from user '%s'", target_filename, target_username);
 
                 pthread_mutex_lock(&g_system_mutex);
-                int file_index = -1;
-                for(int i=0; i < g_num_files; i++) {
-                    if (strcmp(file_directory[i].filename, target_filename) == 0) {
-                        file_index = i;
-                        break;
-                    }
+                
+                FileLocation* file = cache_get_unsafe(target_filename);
+                if (file == NULL) {
+                    file = hash_map_find_unsafe(target_filename);
+                    if (file != NULL) cache_put_unsafe(target_filename, file);
                 }
 
-                if (file_index == -1) {
+                if (file == NULL) {
                     pthread_mutex_unlock(&g_system_mutex);
                     log_to_file(client_addr_str, username, "RES: REMACCESS for '%s' failed: File not found.", target_filename);
                     snprintf(err_msg, sizeof(err_msg), "ERROR %d: File not found.\n", ERROR_FILE_NOT_FOUND);
@@ -990,7 +1340,7 @@ void* handle_connection(void* arg) {
                     continue;
                 }
 
-                if (strcmp(file_directory[file_index].owner_username, username) != 0) {
+                if (strcmp(file->owner_username, username) != 0) {
                     pthread_mutex_unlock(&g_system_mutex);
                     log_to_file(client_addr_str, username, "RES: REMACCESS for '%s' failed: Not owner.", target_filename);
                     snprintf(err_msg, sizeof(err_msg), "ERROR %d: You are not the owner of this file.\n", ERROR_ACCESS_DENIED);
@@ -999,8 +1349,8 @@ void* handle_connection(void* arg) {
                 }
 
                 int perm_index = -1;
-                for (int i = 0; i < file_directory[file_index].num_permissions; i++) {
-                    if (strcmp(file_directory[file_index].acl[i].username, target_username) == 0) {
+                for (int i = 0; i < file->num_permissions; i++) {
+                    if (strcmp(file->acl[i].username, target_username) == 0) {
                         perm_index = i;
                         break;
                     }
@@ -1014,10 +1364,10 @@ void* handle_connection(void* arg) {
                     continue;
                 }
 
-                for (int i = perm_index; i < file_directory[file_index].num_permissions - 1; i++) {
-                    file_directory[file_index].acl[i] = file_directory[file_index].acl[i + 1];
+                for (int i = perm_index; i < file->num_permissions - 1; i++) {
+                    file->acl[i] = file->acl[i + 1];
                 }
-                file_directory[file_index].num_permissions--;
+                file->num_permissions--;
                 
                 save_registry_to_disk_unsafe(); // Save persistence
                 printf("  Access removed.\n");
@@ -1035,23 +1385,20 @@ void* handle_connection(void* arg) {
                 printf("Client requested INFO for '%s'\n", filename);
                 log_to_file(client_addr_str, username, "REQ: INFO for '%s'", filename);
 
-                int found_index = -1;
-                int permitted = 0;
                 char response_buffer[BUFFER_SIZE] = {0};
                 int offset = 0;
-
+                FileLocation file_copy;
+                StorageServer* ss = NULL;
+                
                 pthread_mutex_lock(&g_system_mutex);
-                for (int i = 0; i < g_num_files; i++) {
-                    if (strcmp(file_directory[i].filename, filename) == 0) {
-                        found_index = i;
-                        if (check_permission(&file_directory[i], username, 'R')) {
-                            permitted = 1;
-                        }
-                        break;
-                    }
+
+                FileLocation* file = cache_get_unsafe(filename);
+                if (file == NULL) {
+                    file = hash_map_find_unsafe(filename);
+                    if (file != NULL) cache_put_unsafe(filename, file);
                 }
 
-                if (found_index == -1) {
+                if (file == NULL) {
                     pthread_mutex_unlock(&g_system_mutex);
                     log_to_file(client_addr_str, username, "RES: INFO for '%s' failed: File not found.", filename);
                     snprintf(err_msg, sizeof(err_msg), "ERROR %d: File not found.\n", ERROR_FILE_NOT_FOUND);
@@ -1059,7 +1406,7 @@ void* handle_connection(void* arg) {
                     continue;
                 }
 
-                if (!permitted) {
+                if (!check_permission(file, username, 'R')) {
                     pthread_mutex_unlock(&g_system_mutex);
                     printf("  Access Denied for user '%s'.\n", username);
                     log_to_file(client_addr_str, username, "RES: INFO for '%s' failed: Access Denied.", filename);
@@ -1068,8 +1415,8 @@ void* handle_connection(void* arg) {
                     continue;
                 }
 
-                FileLocation file_copy = file_directory[found_index];
-                StorageServer* ss = NULL;
+                file_copy = *file; // Make a copy
+                
                 for (int j = 0; j < g_num_servers; j++) {
                     if (strcmp(server_list[j].ss_ip_addr, file_copy.ss_ip_addr) == 0 &&
                         server_list[j].ss_client_port == file_copy.ss_client_port) {
@@ -1128,32 +1475,35 @@ void* handle_connection(void* arg) {
                 printf("Client requested EXEC for '%s'\n", filename);
                 log_to_file(client_addr_str, username, "REQ: EXEC for '%s'", filename);
 
-                int found_index = -1;
                 int permitted = 0;
                 FileLocation file_copy;
                 StorageServer* ss = NULL;
+                FileLocation* file = NULL;
 
                 pthread_mutex_lock(&g_system_mutex);
-                for (int i = 0; i < g_num_files; i++) {
-                    if (strcmp(file_directory[i].filename, filename) == 0) {
-                        found_index = i;
-                        if (check_permission(&file_directory[i], username, 'R')) {
-                            permitted = 1;
-                            file_copy = file_directory[i]; 
-                            for (int j = 0; j < g_num_servers; j++) {
-                                if (strcmp(server_list[j].ss_ip_addr, file_copy.ss_ip_addr) == 0 &&
-                                    server_list[j].ss_client_port == file_copy.ss_client_port) {
-                                    ss = &server_list[j];
-                                    break;
-                                }
+                
+                file = cache_get_unsafe(filename);
+                if (file == NULL) {
+                    file = hash_map_find_unsafe(filename);
+                    if (file != NULL) cache_put_unsafe(filename, file);
+                }
+                
+                if (file != NULL) {
+                    if (check_permission(file, username, 'R')) {
+                        permitted = 1;
+                        file_copy = *file; 
+                        for (int j = 0; j < g_num_servers; j++) {
+                            if (strcmp(server_list[j].ss_ip_addr, file_copy.ss_ip_addr) == 0 &&
+                                server_list[j].ss_client_port == file_copy.ss_client_port) {
+                                ss = &server_list[j];
+                                break;
                             }
                         }
-                        break;
                     }
                 }
                 pthread_mutex_unlock(&g_system_mutex);
 
-                if (found_index == -1) {
+                if (file == NULL) {
                     log_to_file(client_addr_str, username, "RES: EXEC for '%s' failed: File not found.", filename);
                     snprintf(err_msg, sizeof(err_msg), "ERROR %d: File not found.\n", ERROR_FILE_NOT_FOUND);
                     write(client_socket, err_msg, strlen(err_msg));
@@ -1228,33 +1578,36 @@ void* handle_connection(void* arg) {
                 printf("Client requested UNDO for '%s'\n", filename);
                 log_to_file(client_addr_str, username, "REQ: UNDO for '%s'", filename);
 
-                int found_index = -1;
                 char ss_ip[INET_ADDRSTRLEN];
                 int ss_nm_port = -1;
                 int permitted = 0; 
+                FileLocation* file = NULL;
 
                 pthread_mutex_lock(&g_system_mutex);
-                for (int i = 0; i < g_num_files; i++) {
-                    if (strcmp(file_directory[i].filename, filename) == 0) {
-                        found_index = i;
-                        if (check_permission(&file_directory[i], username, 'W')) {
-                            permitted = 1;
-                            for (int j = 0; j < g_num_servers; j++) {
-                                if (strcmp(server_list[j].ss_ip_addr, file_directory[i].ss_ip_addr) == 0 &&
-                                    server_list[j].ss_client_port == file_directory[i].ss_client_port) 
-                                {
-                                    strncpy(ss_ip, server_list[j].ss_ip_addr, INET_ADDRSTRLEN);
-                                    ss_nm_port = server_list[j].ss_nm_port;
-                                    break;
-                                }
+                
+                file = cache_get_unsafe(filename);
+                if (file == NULL) {
+                    file = hash_map_find_unsafe(filename);
+                    if (file != NULL) cache_put_unsafe(filename, file);
+                }
+                
+                if (file != NULL) {
+                    if (check_permission(file, username, 'W')) {
+                        permitted = 1;
+                        for (int j = 0; j < g_num_servers; j++) {
+                            if (strcmp(server_list[j].ss_ip_addr, file->ss_ip_addr) == 0 &&
+                                server_list[j].ss_client_port == file->ss_client_port) 
+                            {
+                                strncpy(ss_ip, server_list[j].ss_ip_addr, INET_ADDRSTRLEN);
+                                ss_nm_port = server_list[j].ss_nm_port;
+                                break;
                             }
                         }
-                        break;
                     }
                 }
                 pthread_mutex_unlock(&g_system_mutex);
 
-                if (found_index == -1) {
+                if (file == NULL) {
                     log_to_file(client_addr_str, username, "RES: UNDO for '%s' failed: File not found.", filename);
                     snprintf(err_msg, sizeof(err_msg), "ERROR %d: File not found.\n", ERROR_FILE_NOT_FOUND);
                     write(client_socket, err_msg, strlen(err_msg));
@@ -1299,51 +1652,54 @@ void* handle_connection(void* arg) {
                 printf("Client requested WRITE for '%s', sentence %d\n", filename, sentence_num);
                 log_to_file(client_addr_str, username, "REQ: WRITE for '%s', sentence %d.", filename, sentence_num);
 
-                int found = 0;
                 char ss_ip[INET_ADDRSTRLEN];
                 int ss_port;
                 int permitted = 0;
                 int already_locked = 0;
                 char locking_user[256];
+                FileLocation* file = NULL;
 
                 pthread_mutex_lock(&g_system_mutex);
-                for (int i = 0; i < g_num_files; i++) {
-                    if (strcmp(file_directory[i].filename, filename) == 0) {
-                        found = 1;
-                        if (check_permission(&file_directory[i], username, 'W')) {
-                            permitted = 1;
-                            
-                            for (int j = 0; j < g_num_locks; j++) {
-                                if (strcmp(g_file_locks[j].filename, filename) == 0 && g_file_locks[j].sentence_num == sentence_num) {
-                                    already_locked = 1;
-                                    strncpy(locking_user, g_file_locks[j].username, 255);
-                                    break;
-                                }
-                            }
 
-                            if (!already_locked && g_num_locks < MAX_LOCKS) {
-                                FileLock* new_lock = &g_file_locks[g_num_locks++];
-                                strncpy(new_lock->filename, filename, 255);
-                                strncpy(new_lock->username, username, 255);
-                                new_lock->sentence_num = sentence_num;
-                                
-                                strncpy(ss_ip, file_directory[i].ss_ip_addr, INET_ADDRSTRLEN);
-                                ss_port = file_directory[i].ss_client_port;
-                                printf("  Lock granted to '%s'\n", username);
-                                log_to_file(client_addr_str, username, "INFO: Lock granted for '%s' (sent %d).", filename, sentence_num);
-                            } else if (already_locked) {
-                                // Lock is held
-                            } else {
-                                already_locked = -1; // Signal max locks
+                file = cache_get_unsafe(filename);
+                if (file == NULL) {
+                    file = hash_map_find_unsafe(filename);
+                    if (file != NULL) cache_put_unsafe(filename, file);
+                }
+                
+                if (file != NULL) {
+                    if (check_permission(file, username, 'W')) {
+                        permitted = 1;
+                        
+                        for (int j = 0; j < g_num_locks; j++) {
+                            if (strcmp(g_file_locks[j].filename, filename) == 0 && g_file_locks[j].sentence_num == sentence_num) {
+                                already_locked = 1;
+                                strncpy(locking_user, g_file_locks[j].username, 255);
+                                break;
                             }
                         }
-                        break;
+
+                        if (!already_locked && g_num_locks < MAX_LOCKS) {
+                            FileLock* new_lock = &g_file_locks[g_num_locks++];
+                            strncpy(new_lock->filename, filename, 255);
+                            strncpy(new_lock->username, username, 255);
+                            new_lock->sentence_num = sentence_num;
+                            
+                            strncpy(ss_ip, file->ss_ip_addr, INET_ADDRSTRLEN);
+                            ss_port = file->ss_client_port;
+                            printf("  Lock granted to '%s'\n", username);
+                            log_to_file(client_addr_str, username, "INFO: Lock granted for '%s' (sent %d).", filename, sentence_num);
+                        } else if (already_locked) {
+                            // Lock is held
+                        } else {
+                            already_locked = -1; // Signal max locks
+                        }
                     }
                 }
                 pthread_mutex_unlock(&g_system_mutex);
 
                 char response_buffer[BUFFER_SIZE];
-                if (!found) {
+                if (file == NULL) {
                     log_to_file(client_addr_str, username, "RES: WRITE for '%s' failed: File not found.", filename);
                     snprintf(response_buffer, sizeof(response_buffer), "ERROR %d: File not found.\n", ERROR_FILE_NOT_FOUND);
                 } else if (!permitted) {
@@ -1447,7 +1803,7 @@ void* handle_connection(void* arg) {
     pthread_mutex_unlock(&g_system_mutex);
 
     close(client_socket);
-    printf("Connection closed.\n");
+    printf("Connection from %s closed.\n", client_addr_str);
     log_to_file(client_addr_str, disconnected_username, "INFO: Connection closed.");
     return NULL;
 }
@@ -1456,6 +1812,16 @@ void* handle_connection(void* arg) {
  * --- Main Server Function ---
  */
 int main() {
+    // Initialize hash map buckets to NULL
+    for (int i = 0; i < HASH_MAP_SIZE; i++) {
+        g_file_hash_map[i] = NULL;
+    }
+    
+    // Initialize cache map buckets to NULL
+    for (int i = 0; i < CACHE_MAP_SIZE; i++) {
+        g_cache_map[i] = NULL;
+    }
+
     load_registry_from_disk(); // Load persistent data
     
     int server_fd;
@@ -1465,12 +1831,14 @@ int main() {
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0) {
         perror("socket failed");
+        log_to_file("Internal", "NameServer", "CRITICAL: socket() failed: %m");
         exit(EXIT_FAILURE);
     }
 
     int opt = 1;
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
         perror("setsockopt");
+        log_to_file("Internal", "NameServer", "CRITICAL: setsockopt() failed: %m");
         exit(EXIT_FAILURE);
     }
 
@@ -1480,26 +1848,31 @@ int main() {
 
     if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
         perror("bind failed");
+        log_to_file("Internal", "NameServer", "CRITICAL: bind() failed: %m");
         exit(EXIT_FAILURE);
     }
 
     if (listen(server_fd, 10) < 0) { 
         perror("listen failed");
+        log_to_file("Internal", "NameServer", "CRITICAL: listen() failed: %m");
         exit(EXIT_FAILURE);
     }
 
     printf("Name Server listening on port %d\n", NAME_SERVER_PORT);
+    log_to_file("Internal", "NameServer", "INFO: Name Server listening on port %d", NAME_SERVER_PORT);
 
     while (1) {
         int client_socket = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
         if (client_socket < 0) {
             perror("accept failed");
+            log_to_file("Internal", "NameServer", "ERROR: accept() failed: %m");
             continue; 
         }
 
         char client_ip[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, sizeof(client_ip));
         printf("Accepted new connection from %s:%d\n", client_ip, ntohs(client_addr.sin_port));
+        // Note: We log the connection *inside* handle_connection once we know the type (SS or Client)
 
         pthread_t thread_id;
         int* p_client_socket = malloc(sizeof(int));
@@ -1507,6 +1880,7 @@ int main() {
 
         if (pthread_create(&thread_id, NULL, handle_connection, (void*)p_client_socket) != 0) {
             perror("pthread_create failed");
+            log_to_file("Internal", "NameServer", "ERROR: pthread_create failed: %m");
             free(p_client_socket);
             close(client_socket);
         }

@@ -1,0 +1,27 @@
+[2025-11-07 14:13:11] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 7 files from registry.
+[2025-11-07 14:13:11] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-07 14:13:19] [Client: 127.0.0.1:47768] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-07 14:13:19] [Client: 127.0.0.1:47768] [User: StorageServer] INFO: Registered SS (NM Port 9001, Client Port 9002)
+[2025-11-07 14:13:19] [Client: 127.0.0.1:47768] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-07 14:13:19] [Client: 127.0.0.1:47768] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-07 14:13:19] [Client: 127.0.0.1:47768] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-07 14:13:25] [Client: 127.0.0.1:37330] [User: anu] REQ: REGISTER_CLIENT
+[2025-11-07 14:13:25] [Client: 127.0.0.1:37330] [User: anu] RES: Client registration successful.
+[2025-11-07 14:13:32] [Client: 127.0.0.1:37330] [User: anu] REQ: CREATE for '11.txt'
+[2025-11-07 14:13:32] [Client: Internal] [User: NameServer] INFO: (Persistence) System state saved to disk (8 files).
+[2025-11-07 14:13:32] [Client: 127.0.0.1:37330] [User: anu] RES: CREATE for '11.txt' success.
+[2025-11-07 14:13:40] [Client: 127.0.0.1:37330] [User: anu] REQ: WRITE for '11.txt', sentence 0.
+[2025-11-07 14:13:40] [Client: Internal] [User: NameServer] CACHE: MISS for '11.txt'
+[2025-11-07 14:13:40] [Client: Internal] [User: NameServer] CACHE: ADD for '11.txt'
+[2025-11-07 14:13:40] [Client: 127.0.0.1:37330] [User: anu] INFO: Lock granted for '11.txt' (sent 0).
+[2025-11-07 14:13:40] [Client: 127.0.0.1:37330] [User: anu] RES: WRITE for '11.txt' success. Sending SS_LOCATION 127.0.0.1 9002
+[2025-11-07 14:13:46] [Client: 127.0.0.1:37330] [User: anu] REQ: RELEASE_LOCK for '11.txt' (sent 0).
+[2025-11-07 14:13:46] [Client: 127.0.0.1:37330] [User: anu] RES: Lock released for '11.txt' (sent 0).
+[2025-11-07 14:17:52] [Client: 127.0.0.1:37330] [User: anu] REQ: INFO for '11.txt'
+[2025-11-07 14:17:52] [Client: Internal] [User: NameServer] CACHE: HIT for '11.txt'
+[2025-11-07 14:17:52] [Client: 127.0.0.1:37330] [User: anu] RES: INFO for '11.txt' success.
+[2025-11-07 14:18:01] [Client: 127.0.0.1:37330] [User: anu] REQ: READ for '11.txt'
+[2025-11-07 14:18:01] [Client: Internal] [User: NameServer] CACHE: HIT for '11.txt'
+[2025-11-07 14:18:01] [Client: 127.0.0.1:37330] [User: anu] RES: READ for '11.txt' success. Sending SS_LOCATION 127.0.0.1 9002
+[2025-11-07 14:19:08] [Client: 127.0.0.1:37330] [User: anu] INFO: Client disconnected. Removing from list.
+[2025-11-07 14:19:08] [Client: 127.0.0.1:37330] [User: anu] INFO: Connection closed.
