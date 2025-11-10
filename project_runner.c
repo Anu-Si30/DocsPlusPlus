@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <ctype.h>
 
 /*
  * C program to manage the build and concurrent execution of a distributed system.
@@ -9,16 +10,21 @@
  * This program performs three main tasks:
  * 1. Build the project using 'make clean' and 'make all'.
  * 2. Launch the three executables in separate terminal windows concurrently.
- * 3. Use 'gnome-terminal' (common on Linux) to open new windows.
- * The '/bin/bash -c "..."' wrapper is used to ensure the terminal stays open
- * after the program runs, allowing you to view the output.
+ * 3. Use 'xterm' (lightweight, widely available) to open new windows.
+ * The '-hold' option keeps the terminal open after the program finishes.
  *
- * NOTE: If you are not using a GNOME-based Linux distribution, you may need to
- * change 'gnome-terminal' to your system's preferred emulator (e.g., 'xterm', 'konsole', etc.)
+ * NOTE: This version uses xterm to avoid snap package conflicts with gnome-terminal.
+ * If xterm is not installed, run: sudo apt install xterm
+ * 
+ * ALTERNATIVES:
+ * - For gnome-terminal (if not snap): Change TERMINAL_CMD to "gnome-terminal --"
+ * - For konsole: Change to "konsole -e"
+ * - For xfce4-terminal: Change to "xfce4-terminal -e"
  */
 
 // Define the terminal command and target programs
-#define TERMINAL_CMD "gnome-terminal"
+// Using xterm for better compatibility (avoids snap conflicts)
+#define TERMINAL_CMD "xterm"
 #define NAMESERVER_TITLE "1. Name Server"
 #define STORAGESERVER_TITLE "2. Storage Server"
 #define CLIENT_TITLE "3. Client"
@@ -45,12 +51,14 @@ void launch_terminal(const char *title, const char *executable) {
     // Buffer to hold the full command string
     char command[512]; 
 
-    // Construct the command: 
-    // gnome-terminal --title="Title" -- /bin/bash -c "./executable; exec bash"
-    // The 'exec bash' keeps the window open after the executable finishes.
+    // Using xterm for maximum compatibility (avoids snap gnome-terminal issues)
+    // xterm -hold keeps window open after program exits
+    // -T sets the title, -e executes the command
+    // & at the end runs it in background so we can launch multiple terminals
+    
     snprintf(command, sizeof(command),
-             "%s --title=\"%s\" -- /bin/bash -c \"%s; echo '--- Program finished ---'; exec bash\"",
-             TERMINAL_CMD, title, executable);
+             "%s -T \"%s\" -hold -e bash -c 'echo \"=== %s ===\"; echo; %s; echo; echo \"--- Program finished (exit code: $?) ---\"' &",
+             TERMINAL_CMD, title, title, executable);
 
     printf("Launching %s in new terminal...\n", title);
 
@@ -92,7 +100,67 @@ int main() {
     launch_terminal(CLIENT_TITLE, CLIENT_EXEC);
     
     printf("\nAll services launched concurrently in separate windows.\n");
-    printf("You can close this main runner terminal now, but the other three must remain open.\n");
+    
+    // 3. Interactive Menu: Allow launching additional clients
+    printf("\n=== Interactive Control Menu ===\n");
+    printf("Commands:\n");
+    printf("  new      - Launch a new client terminal\n");
+    printf("  client   - Launch a new client terminal\n");
+    printf("  status   - Show running processes\n");
+    printf("  help     - Show this menu\n");
+    printf("  quit     - Exit this manager (services will keep running)\n");
+    printf("  exit     - Exit this manager (services will keep running)\n");
+    printf("\nType a command: ");
+    
+    char input[256];
+    int client_count = 1; // We already launched one client
+    
+    while (1) {
+        if (fgets(input, sizeof(input), stdin) == NULL) {
+            break; // EOF or error
+        }
+        
+        // Remove newline
+        input[strcspn(input, "\n")] = 0;
+        
+        // Convert to lowercase for comparison
+        for (int i = 0; input[i]; i++) {
+            input[i] = tolower(input[i]);
+        }
+        
+        if (strcmp(input, "new") == 0 || strcmp(input, "client") == 0) {
+            client_count++;
+            char title[128];
+            snprintf(title, sizeof(title), "%d. Client #%d", 2 + client_count, client_count);
+            launch_terminal(title, CLIENT_EXEC);
+            printf("Launched new client terminal (#%d)\n", client_count);
+            printf("\nType a command: ");
+            
+        } else if (strcmp(input, "status") == 0) {
+            printf("\nChecking running processes...\n");
+            system("ps aux | grep -E 'xterm.*nameserver|xterm.*storageserver|xterm.*client|./nameserver|./storageserver|./client' | grep -v grep | grep -v 'project_runner'");
+            printf("\nType a command: ");
+            
+        } else if (strcmp(input, "help") == 0) {
+            printf("\nCommands:\n");
+            printf("  new/client - Launch a new client terminal\n");
+            printf("  status     - Show running processes\n");
+            printf("  help       - Show this menu\n");
+            printf("  quit/exit  - Exit this manager\n");
+            printf("\nType a command: ");
+            
+        } else if (strcmp(input, "quit") == 0 || strcmp(input, "exit") == 0) {
+            printf("\nExiting manager. Services will continue running in their terminals.\n");
+            printf("Close individual terminal windows to stop services.\n");
+            break;
+            
+        } else if (strlen(input) > 0) {
+            printf("Unknown command: '%s'. Type 'help' for available commands.\n", input);
+            printf("\nType a command: ");
+        } else {
+            printf("\nType a command: ");
+        }
+    }
 
     return 0;
 }
