@@ -6,9 +6,10 @@
 #include <sys/socket.h>
 #include <pthread.h>
 #include <ctype.h>     // For isspace()
-#include <sys/stat.h>  // For stat()
+#include <sys/stat.h>  // For stat(), mkdir()
 #include <time.h>      // For strftime()
 #include <stdarg.h>    // For va_list
+#include <dirent.h>    // For opendir(), readdir()
 #include "common.h" 
 // --- Define This Storage Server's Details ---
 #define SS_NM_PORT 9001       // Port for NM to connect to
@@ -420,6 +421,83 @@ void* handle_nm_command(void* arg) {
                 log_to_file(nm_addr_str, "NameServer", "RES: UNDO_FILE for '%s' success.", filename);
                 write(nm_socket, "ACK_UNDO_SUCCESS\n", 17);
             }
+        }
+    } else if (strcmp(command, "CREATE_FOLDER") == 0) {
+        printf("SS (NM-Handler): NM requested to create folder '%s'\n", filename);
+        log_to_file(nm_addr_str, "NameServer", "REQ: CREATE_FOLDER for '%s'", filename);
+        char folder_path[512];
+        snprintf(folder_path, sizeof(folder_path), "%s%s", SS_STORAGE_DIR, filename);
+        
+        // Create directory
+        if (mkdir(folder_path, 0755) == 0) {
+            printf("SS (NM-Handler): Folder '%s' created successfully.\n", filename);
+            log_to_file(nm_addr_str, "NameServer", "RES: CREATE_FOLDER for '%s' success.", filename);
+            write(nm_socket, "ACK_FOLDER_SUCCESS\n", sizeof("ACK_FOLDER_SUCCESS\n") - 1);
+        } else {
+            perror("SS (NM-Handler): mkdir failed");
+            log_to_file(nm_addr_str, "NameServer", "RES: CREATE_FOLDER for '%s' failed: mkdir failed.", filename);
+            write(nm_socket, "ACK_FOLDER_FAIL\n", sizeof("ACK_FOLDER_FAIL\n") - 1);
+        }
+    } else if (strcmp(command, "MOVE_FILE") == 0) {
+        // Format: "MOVE_FILE <filename> <folder_path>"
+        char folder_path[256];
+        if (sscanf(buffer, "%s %s %s", command, filename, folder_path) != 3) {
+            printf("SS (NM-Handler): Invalid MOVE_FILE format\n");
+            log_to_file(nm_addr_str, "NameServer", "ERROR: Invalid MOVE_FILE format");
+            write(nm_socket, "ACK_MOVE_FAIL\n", sizeof("ACK_MOVE_FAIL\n") - 1);
+        } else {
+            printf("SS (NM-Handler): NM requested to move '%s' to '%s'\n", filename, folder_path);
+            log_to_file(nm_addr_str, "NameServer", "REQ: MOVE_FILE '%s' to '%s'", filename, folder_path);
+            
+            char old_path[1024], new_path[1024];
+            snprintf(old_path, sizeof(old_path), "%s%s", SS_STORAGE_DIR, filename);
+            snprintf(new_path, sizeof(new_path), "%s%s/%s", SS_STORAGE_DIR, folder_path, filename);
+            
+            if (rename(old_path, new_path) == 0) {
+                printf("SS (NM-Handler): File '%s' moved successfully to '%s'\n", filename, folder_path);
+                log_to_file(nm_addr_str, "NameServer", "RES: MOVE_FILE '%s' to '%s' success.", filename, folder_path);
+                write(nm_socket, "ACK_MOVE_SUCCESS\n", sizeof("ACK_MOVE_SUCCESS\n") - 1);
+            } else {
+                perror("SS (NM-Handler): rename failed");
+                log_to_file(nm_addr_str, "NameServer", "RES: MOVE_FILE '%s' failed: rename failed.", filename);
+                write(nm_socket, "ACK_MOVE_FAIL\n", sizeof("ACK_MOVE_FAIL\n") - 1);
+            }
+        }
+    } else if (strcmp(command, "VIEW_FOLDER") == 0) {
+        printf("SS (NM-Handler): NM requested to view folder '%s'\n", filename);
+        log_to_file(nm_addr_str, "NameServer", "REQ: VIEW_FOLDER for '%s'", filename);
+        
+        char folder_path[512];
+        snprintf(folder_path, sizeof(folder_path), "%s%s", SS_STORAGE_DIR, filename);
+        
+        // List directory contents
+        DIR* dir = opendir(folder_path);
+        if (dir == NULL) {
+            perror("SS (NM-Handler): opendir failed");
+            log_to_file(nm_addr_str, "NameServer", "RES: VIEW_FOLDER for '%s' failed: opendir failed.", filename);
+            write(nm_socket, "ERROR: Folder not found\n", 24);
+        } else {
+            char response_buf[BUFFER_SIZE] = "Files in folder:\n";
+            int offset = strlen(response_buf);
+            struct dirent* entry;
+            
+            while ((entry = readdir(dir)) != NULL) {
+                // Skip . and ..
+                if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+                    continue;
+                }
+                offset += snprintf(response_buf + offset, BUFFER_SIZE - offset, "%s\n", entry->d_name);
+                if (offset >= BUFFER_SIZE - 100) break; // Prevent overflow
+            }
+            closedir(dir);
+            
+            if (offset == strlen("Files in folder:\n")) {
+                snprintf(response_buf + offset, BUFFER_SIZE - offset, "(empty)\n");
+            }
+            
+            printf("  Sending folder listing.\n");
+            log_to_file(nm_addr_str, "NameServer", "RES: VIEW_FOLDER for '%s' success.", filename);
+            write(nm_socket, response_buf, strlen(response_buf));
         }
     } else {
         printf("SS (NM-Handler): Unknown command from NM '%s'\n", command);

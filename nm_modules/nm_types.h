@@ -17,6 +17,7 @@ typedef struct {
 
 typedef struct {
     char filename[256];
+    char folder_path[512];       // Full folder path (e.g., "/folder1/subfolder2")
     char owner_username[256];        
     AccessControl acl[MAX_PERMISSIONS]; 
     int num_permissions;                
@@ -46,6 +47,14 @@ typedef struct {
     char username[256]; // Who holds the lock
 } FileLock;
 
+// Folder Structure
+typedef struct FolderNode {
+    char foldername[256];
+    char folder_path[512];       // Full path (e.g., "/folder1/subfolder2")
+    char owner_username[256];
+    struct FolderNode* next;
+} FolderNode;
+
 // Hash Map Structures
 typedef struct HashNode {
     char key[256];             // The filename
@@ -74,6 +83,7 @@ typedef struct CacheMapEntry {
 #define MAX_SERVERS 10
 #define MAX_CLIENTS 50 
 #define MAX_LOCKS 50
+#define MAX_FOLDERS 200
 #define EXEC_OUTPUT_BUFFER_SIZE 8192 
 #define NM_REGISTRY_FILE "nm_registry.dat"
 #define NM_LOG_FILE "nameserver.log"

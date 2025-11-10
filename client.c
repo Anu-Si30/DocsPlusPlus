@@ -116,7 +116,7 @@ void stream_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
 /*
  * Connects to SS and enters the interactive write session.
  */
-void write_session_to_ss(int nm_socket, const char* ss_ip, int ss_port, const char* filename, int sentence_num) {
+void write_session_to_ss(int nm_socket, const char* ss_ip, int ss_port, const char* base_filename, const char* ss_filename, int sentence_num) {
     int ss_sock;
     struct sockaddr_in ss_addr;
     char command_buffer[BUFFER_SIZE];
@@ -143,7 +143,7 @@ void write_session_to_ss(int nm_socket, const char* ss_ip, int ss_port, const ch
     }
 
     // 2. Send the WRITE_START command
-    snprintf(command_buffer, sizeof(command_buffer), "WRITE_START %s %d\n", filename, sentence_num);
+    snprintf(command_buffer, sizeof(command_buffer), "WRITE_START %s %d\n", ss_filename, sentence_num);
     if (write(ss_sock, command_buffer, strlen(command_buffer)) < 0) {
         perror("Client (SS-Write): failed to send start command");
         close(ss_sock);
@@ -202,7 +202,7 @@ void write_session_to_ss(int nm_socket, const char* ss_ip, int ss_port, const ch
 
     // 4. Tell NM to release the lock
     printf("Write session ended. Releasing lock...\n");
-    snprintf(command_buffer, sizeof(command_buffer), "RELEASE_LOCK %s %d\n", filename, sentence_num);
+    snprintf(command_buffer, sizeof(command_buffer), "RELEASE_LOCK %s %d\n", base_filename, sentence_num);
     if (write(nm_socket, command_buffer, strlen(command_buffer)) < 0) {
         perror("Failed to send RELEASE_LOCK to NM");
     } else {
@@ -262,18 +262,21 @@ void command_loop(int nm_socket) {
         }
 
         // --- **** CORRECTED LOGIC ORDER **** ---
-        char command[64], arg1[256];
-        int arg2;
+        char command[64], arg1[256], arg2_str[256];
+        int arg2_int;
         int is_read_cmd = 0;
         int is_stream_cmd = 0; 
-        int is_write_cmd = 0; 
+        int is_write_cmd = 0;
         
-        // --- CHECK FOR 3-ARG COMMANDS FIRST ---
-        if (sscanf(command_buffer, "%s %s %d", command, arg1, &arg2) == 3) {
+        // --- CHECK FOR 3-ARG COMMANDS FIRST (with integer arg) ---
+        if (sscanf(command_buffer, "%s %s %d", command, arg1, &arg2_int) == 3) {
              if (strcmp(command, "WRITE") == 0) {
                 is_write_cmd = 1;
             }
         // --- THEN CHECK FOR 2-ARG COMMANDS ---
+        } else if (sscanf(command_buffer, "%s %s %s", command, arg1, arg2_str) == 3) {
+            // Commands with 2 string arguments (like MOVE filename foldername)
+            // No special handling needed - will use normal response flow
         } else if (sscanf(command_buffer, "%s %s", command, arg1) == 2) {
             if (strcmp(command, "READ") == 0) {
                 is_read_cmd = 1;
@@ -301,8 +304,14 @@ void command_loop(int nm_socket) {
             if (strncmp(response_buffer, "SS_LOCATION", 11) == 0) {
                 char ss_ip[INET_ADDRSTRLEN];
                 int ss_port;
-                if (sscanf(response_buffer, "SS_LOCATION %s %d", ss_ip, &ss_port) == 2) {
-                    write_session_to_ss(nm_socket, ss_ip, ss_port, arg1, arg2);
+                char full_path[512];
+                
+                // Try to parse with 3 parameters (ip, port, full_path)
+                if (sscanf(response_buffer, "SS_LOCATION %s %d %s", ss_ip, &ss_port, full_path) == 3) {
+                    write_session_to_ss(nm_socket, ss_ip, ss_port, arg1, full_path, arg2_int);
+                } else if (sscanf(response_buffer, "SS_LOCATION %s %d", ss_ip, &ss_port) == 2) {
+                    // Fallback to 2 parameters (old format)
+                    write_session_to_ss(nm_socket, ss_ip, ss_port, arg1, arg1, arg2_int);
                 } else {
                     printf("Error: Could not parse SS_LOCATION response.\n");
                 }
@@ -324,7 +333,17 @@ void command_loop(int nm_socket) {
         if ((is_read_cmd || is_stream_cmd) && strncmp(response_buffer, "SS_LOCATION", 11) == 0) {
             char ss_ip[INET_ADDRSTRLEN];
             int ss_port;
-            if (sscanf(response_buffer, "SS_LOCATION %s %d", ss_ip, &ss_port) == 2) {
+            char full_path[512];
+            
+            // Try to parse with 3 parameters (ip, port, full_path)
+            if (sscanf(response_buffer, "SS_LOCATION %s %d %s", ss_ip, &ss_port, full_path) == 3) {
+                if (is_read_cmd) {
+                    fetch_file_from_ss(ss_ip, ss_port, full_path); 
+                } else if (is_stream_cmd) {
+                    stream_file_from_ss(ss_ip, ss_port, full_path); 
+                }
+            } else if (sscanf(response_buffer, "SS_LOCATION %s %d", ss_ip, &ss_port) == 2) {
+                // Fallback to 2 parameters (old format)
                 if (is_read_cmd) {
                     fetch_file_from_ss(ss_ip, ss_port, arg1); 
                 } else if (is_stream_cmd) {

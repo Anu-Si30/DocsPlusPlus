@@ -17,7 +17,14 @@
 #define ERROR_NO_UNDO_HISTORY 410
 #define ERROR_SERVER_ERROR 500
 #define ERROR_MAX_LOCKS 503
+#define ERROR_FOLDER_EXISTS 409
+#define ERROR_FOLDER_NOT_FOUND 404
 // --- **** END OF ADDITION **** ---
+
+// Operation codes for folder management
+#define OP_CREATE_FOLDER 100
+#define OP_MOVE 101
+#define OP_VIEW_FOLDER 102
 
 #define NAME_SERVER_PORT 8080
 #define BUFFER_SIZE 4096

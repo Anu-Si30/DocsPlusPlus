@@ -26,9 +26,11 @@ HashNode* g_file_hash_map[HASH_MAP_SIZE]; // The main file directory
 StorageServer server_list[MAX_SERVERS];
 ClientInfo client_list[MAX_CLIENTS]; 
 FileLock g_file_locks[MAX_LOCKS];
+FolderNode* g_folder_list = NULL; // Linked list of folders
 int g_num_servers = 0;
 int g_num_clients = 0; 
 int g_num_locks = 0;
+int g_num_folders = 0;
 
 // --- **** NEW: LRU CACHE GLOBALS **** ---
 CacheMapEntry* g_cache_map[CACHE_MAP_SIZE];
@@ -297,6 +299,169 @@ void get_current_timestamp(char* buffer, int len) {
     strftime(buffer, len, "%Y-%m-%d %H:%M", tm_info);
 }
 
+// --- Folder Helper Functions ---
+
+// Forward folder creation to storage server
+int forward_create_folder_to_ss(const char* ss_ip, int ss_nm_port, const char* folder_path) {
+    int ss_sock;
+    struct sockaddr_in ss_addr;
+    char command[BUFFER_SIZE];
+    char response[BUFFER_SIZE];
+
+    if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("NM (SS-Client): socket failed");
+        return -1;
+    }
+    ss_addr.sin_family = AF_INET;
+    ss_addr.sin_port = htons(ss_nm_port);
+    if (inet_pton(AF_INET, ss_ip, &ss_addr.sin_addr) <= 0) {
+        perror("NM (SS-Client): invalid address");
+        close(ss_sock);
+        return -1;
+    }
+    if (connect(ss_sock, (struct sockaddr*)&ss_addr, sizeof(ss_addr)) < 0) {
+        perror("NM (SS-Client): connect to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    snprintf(command, sizeof(command), "CREATE_FOLDER %s\n", folder_path);
+    if (write(ss_sock, command, strlen(command)) < 0) {
+        perror("NM (SS-Client): write to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    ssize_t bytes_read = read(ss_sock, response, sizeof(response) - 1);
+    close(ss_sock); 
+    if (bytes_read <= 0) {
+        printf("NM (SS-Client): No response from SS.\n");
+        return -1;
+    }
+    response[bytes_read] = '\0';
+    if (strncmp(response, "ACK_FOLDER_SUCCESS", 18) == 0) {
+        return 0; 
+    } else {
+        return -1; 
+    }
+}
+
+// Forward file move to storage server
+int forward_move_to_ss(const char* ss_ip, int ss_nm_port, const char* filename, const char* folder_path) {
+    int ss_sock;
+    struct sockaddr_in ss_addr;
+    char command[BUFFER_SIZE];
+    char response[BUFFER_SIZE];
+
+    if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("NM (SS-Client): socket failed");
+        return -1;
+    }
+    ss_addr.sin_family = AF_INET;
+    ss_addr.sin_port = htons(ss_nm_port);
+    if (inet_pton(AF_INET, ss_ip, &ss_addr.sin_addr) <= 0) {
+        perror("NM (SS-Client): invalid address");
+        close(ss_sock);
+        return -1;
+    }
+    if (connect(ss_sock, (struct sockaddr*)&ss_addr, sizeof(ss_addr)) < 0) {
+        perror("NM (SS-Client): connect to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    snprintf(command, sizeof(command), "MOVE_FILE %s %s\n", filename, folder_path);
+    if (write(ss_sock, command, strlen(command)) < 0) {
+        perror("NM (SS-Client): write to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    ssize_t bytes_read = read(ss_sock, response, sizeof(response) - 1);
+    close(ss_sock); 
+    if (bytes_read <= 0) {
+        printf("NM (SS-Client): No response from SS.\n");
+        return -1;
+    }
+    response[bytes_read] = '\0';
+    if (strncmp(response, "ACK_MOVE_SUCCESS", 16) == 0) {
+        return 0; 
+    } else {
+        return -1; 
+    }
+}
+
+// Get folder listing from storage server
+int get_folder_listing_from_ss(const char* ss_ip, int ss_nm_port, const char* folder_path, char* out_buffer, int out_len) {
+    int ss_sock;
+    struct sockaddr_in ss_addr;
+    char command[BUFFER_SIZE];
+
+    if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("NM (SS-Client): socket failed");
+        return -1;
+    }
+    ss_addr.sin_family = AF_INET;
+    ss_addr.sin_port = htons(ss_nm_port);
+    if (inet_pton(AF_INET, ss_ip, &ss_addr.sin_addr) <= 0) {
+        perror("NM (SS-Client): invalid address");
+        close(ss_sock);
+        return -1;
+    }
+    if (connect(ss_sock, (struct sockaddr*)&ss_addr, sizeof(ss_addr)) < 0) {
+        perror("NM (SS-Client): connect to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    
+    snprintf(command, sizeof(command), "VIEW_FOLDER %s\n", folder_path);
+    if (write(ss_sock, command, strlen(command)) < 0) {
+        perror("NM (SS-Client): write to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+
+    ssize_t total_bytes_read = 0;
+    ssize_t bytes_read;
+    while (total_bytes_read < out_len - 1 && 
+           (bytes_read = read(ss_sock, out_buffer + total_bytes_read, out_len - 1 - total_bytes_read)) > 0) {
+        total_bytes_read += bytes_read;
+    }
+    
+    out_buffer[total_bytes_read] = '\0';
+    close(ss_sock);
+    
+    if (bytes_read < 0) {
+        perror("NM (SS-Client): read folder listing failed");
+        return -1;
+    }
+    
+    return 0;
+}
+
+// Find folder in folder list
+FolderNode* find_folder(const char* folder_path) {
+    FolderNode* current = g_folder_list;
+    while (current != NULL) {
+        if (strcmp(current->folder_path, folder_path) == 0) {
+            return current;
+        }
+        current = current->next;
+    }
+    return NULL;
+}
+
+// Add folder to folder list (unsafe - must hold g_system_mutex)
+void add_folder_unsafe(const char* foldername, const char* folder_path, const char* owner) {
+    FolderNode* new_folder = (FolderNode*)malloc(sizeof(FolderNode));
+    strncpy(new_folder->foldername, foldername, 255);
+    new_folder->foldername[255] = '\0';
+    strncpy(new_folder->folder_path, folder_path, 511);
+    new_folder->folder_path[511] = '\0';
+    strncpy(new_folder->owner_username, owner, 255);
+    new_folder->owner_username[255] = '\0';
+    
+    new_folder->next = g_folder_list;
+    g_folder_list = new_folder;
+    g_num_folders++;
+}
+
 // ---------------------------------------
 
 /*
@@ -501,7 +666,7 @@ void* handle_connection(void* arg) {
                 log_to_file(client_addr_str, username, "RES: VIEW success. Sent %d files.", files_shown);
             
             } else if (strncmp(buffer, "READ", 4) == 0) {
-                char filename[256];
+                char filename[1024];
                 if (sscanf(buffer, "READ %s", filename) != 1) {
                     snprintf(err_msg, sizeof(err_msg), "ERROR: Invalid READ format. Use: READ <filename>\n");
                     write(client_socket, err_msg, strlen(err_msg));
@@ -532,6 +697,17 @@ void* handle_connection(void* arg) {
                         ss_port = file->ss_client_port;
                         get_current_timestamp(file->last_accessed_ts, 128);
                         strncpy(file->last_accessed_by, username, 255);
+                        
+                        // Build full file path including folder for SS
+                        if (strlen(file->folder_path) > 0 && strcmp(file->folder_path, "/") != 0) {
+                            // File is in a folder - send full path
+                            snprintf(filename, 1024, "%s/%s", 
+                                    file->folder_path + 1, file->filename); // +1 to skip leading '/'
+                        } else {
+                            // File is in root - use base filename  
+                            strncpy(filename, file->filename, 1023);
+                            filename[1023] = '\0';
+                        }
                     }
                 }
                 pthread_mutex_unlock(&g_system_mutex);
@@ -546,14 +722,14 @@ void* handle_connection(void* arg) {
                     log_to_file(client_addr_str, username, "RES: READ for '%s' failed: Access Denied.", filename);
                     snprintf(response_buffer, sizeof(response_buffer), "ERROR %d: Access Denied.\n", ERROR_ACCESS_DENIED);
                 } else {
-                    printf("  Access Granted. Sending location to client: %s %d\n", ss_ip, ss_port);
-                    log_to_file(client_addr_str, username, "RES: READ for '%s' success. Sending SS_LOCATION %s %d", filename, ss_ip, ss_port);
-                    snprintf(response_buffer, sizeof(response_buffer), "SS_LOCATION %s %d\n", ss_ip, ss_port);
+                    printf("  Access Granted. Sending location to client: %s %d (file: %s)\n", ss_ip, ss_port, filename);
+                    log_to_file(client_addr_str, username, "RES: READ for '%s' success. Sending SS_LOCATION %s %d %s", file->filename, ss_ip, ss_port, filename);
+                    snprintf(response_buffer, sizeof(response_buffer), "SS_LOCATION %s %d %s\n", ss_ip, ss_port, filename);
                 }
                 write(client_socket, response_buffer, strlen(response_buffer));
             
             } else if (strncmp(buffer, "STREAM", 6) == 0) {
-                char filename[256];
+                char filename[1024];
                 if (sscanf(buffer, "STREAM %s", filename) != 1) {
                     snprintf(err_msg, sizeof(err_msg), "ERROR: Invalid STREAM format. Use: STREAM <filename>\n");
                     write(client_socket, err_msg, strlen(err_msg));
@@ -584,6 +760,17 @@ void* handle_connection(void* arg) {
                         ss_port = file->ss_client_port;
                         get_current_timestamp(file->last_accessed_ts, 128);
                         strncpy(file->last_accessed_by, username, 255);
+                        
+                        // Build full file path including folder for SS
+                        if (strlen(file->folder_path) > 0 && strcmp(file->folder_path, "/") != 0) {
+                            // File is in a folder - send full path
+                            snprintf(filename, 1024, "%s/%s", 
+                                    file->folder_path + 1, file->filename); // +1 to skip leading '/'
+                        } else {
+                            // File is in root - use base filename  
+                            strncpy(filename, file->filename, 1023);
+                            filename[1023] = '\0';
+                        }
                     }
                 }
                 pthread_mutex_unlock(&g_system_mutex);
@@ -598,11 +785,208 @@ void* handle_connection(void* arg) {
                     log_to_file(client_addr_str, username, "RES: STREAM for '%s' failed: Access Denied.", filename);
                     snprintf(response_buffer, sizeof(response_buffer), "ERROR %d: Access Denied.\n", ERROR_ACCESS_DENIED);
                 } else {
-                    printf("  Access Granted. Sending location to client: %s %d\n", ss_ip, ss_port);
-                    log_to_file(client_addr_str, username, "RES: STREAM for '%s' success. Sending SS_LOCATION %s %d", filename, ss_ip, ss_port);
-                    snprintf(response_buffer, sizeof(response_buffer), "SS_LOCATION %s %d\n", ss_ip, ss_port);
+                    printf("  Access Granted. Sending location to client: %s %d (file: %s)\n", ss_ip, ss_port, filename);
+                    log_to_file(client_addr_str, username, "RES: STREAM for '%s' success. Sending SS_LOCATION %s %d %s", file->filename, ss_ip, ss_port, filename);
+                    snprintf(response_buffer, sizeof(response_buffer), "SS_LOCATION %s %d %s\n", ss_ip, ss_port, filename);
                 }
                 write(client_socket, response_buffer, strlen(response_buffer));
+
+            } else if (strncmp(buffer, "CREATEFOLDER", 12) == 0) {
+                char foldername[256];
+                if (sscanf(buffer, "CREATEFOLDER %s", foldername) != 1) {
+                    snprintf(err_msg, sizeof(err_msg), "ERROR: Invalid CREATEFOLDER format. Use: CREATEFOLDER <foldername>\n");
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+                printf("Client requested CREATEFOLDER '%s'\n", foldername);
+                log_to_file(client_addr_str, username, "REQ: CREATEFOLDER '%s'", foldername);
+
+                // Build folder path (for now, simple flat structure: /foldername)
+                char folder_path[512];
+                snprintf(folder_path, sizeof(folder_path), "/%s", foldername);
+
+                pthread_mutex_lock(&g_system_mutex);
+                
+                FolderNode* existing_folder = find_folder(folder_path);
+                if (existing_folder != NULL) {
+                    pthread_mutex_unlock(&g_system_mutex);
+                    log_to_file(client_addr_str, username, "RES: CREATEFOLDER '%s' failed: Folder already exists.", foldername);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: Folder already exists.\n", ERROR_FOLDER_EXISTS);
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+
+                if (g_num_servers == 0) {
+                    pthread_mutex_unlock(&g_system_mutex);
+                    log_to_file(client_addr_str, username, "RES: CREATEFOLDER '%s' failed: No Storage Servers available.", foldername);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: No Storage Servers available.\n", ERROR_SERVER_ERROR);
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+
+                char ss_ip[INET_ADDRSTRLEN];
+                int ss_nm_port = server_list[0].ss_nm_port;
+                strncpy(ss_ip, server_list[0].ss_ip_addr, INET_ADDRSTRLEN);
+                
+                pthread_mutex_unlock(&g_system_mutex);
+                int result = forward_create_folder_to_ss(ss_ip, ss_nm_port, folder_path);
+
+                if (result == 0) {
+                    pthread_mutex_lock(&g_system_mutex);
+                    add_folder_unsafe(foldername, folder_path, username);
+                    pthread_mutex_unlock(&g_system_mutex);
+
+                    printf("  Successfully created folder '%s'\n", foldername);
+                    log_to_file(client_addr_str, username, "RES: CREATEFOLDER '%s' success.", foldername);
+                    write(client_socket, "Folder created successfully.\n", sizeof("Folder created successfully.\n") - 1);
+                } else {
+                    log_to_file(client_addr_str, username, "RES: CREATEFOLDER '%s' failed: SS failed to create folder.", foldername);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: Storage Server failed to create folder.\n", ERROR_SERVER_ERROR);
+                    write(client_socket, err_msg, strlen(err_msg));
+                }
+
+            } else if (strncmp(buffer, "VIEWFOLDER", 10) == 0) {
+                char foldername[256];
+                if (sscanf(buffer, "VIEWFOLDER %s", foldername) != 1) {
+                    snprintf(err_msg, sizeof(err_msg), "ERROR: Invalid VIEWFOLDER format. Use: VIEWFOLDER <foldername>\n");
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+                printf("Client requested VIEWFOLDER '%s'\n", foldername);
+                log_to_file(client_addr_str, username, "REQ: VIEWFOLDER '%s'", foldername);
+
+                char folder_path[512];
+                snprintf(folder_path, sizeof(folder_path), "/%s", foldername);
+
+                pthread_mutex_lock(&g_system_mutex);
+                
+                FolderNode* folder = find_folder(folder_path);
+                if (folder == NULL) {
+                    pthread_mutex_unlock(&g_system_mutex);
+                    log_to_file(client_addr_str, username, "RES: VIEWFOLDER '%s' failed: Folder not found.", foldername);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: Folder not found.\n", ERROR_FOLDER_NOT_FOUND);
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+
+                if (g_num_servers == 0) {
+                    pthread_mutex_unlock(&g_system_mutex);
+                    log_to_file(client_addr_str, username, "RES: VIEWFOLDER '%s' failed: No Storage Servers available.", foldername);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: No Storage Servers available.\n", ERROR_SERVER_ERROR);
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+
+                char ss_ip[INET_ADDRSTRLEN];
+                int ss_nm_port = server_list[0].ss_nm_port;
+                strncpy(ss_ip, server_list[0].ss_ip_addr, INET_ADDRSTRLEN);
+                
+                pthread_mutex_unlock(&g_system_mutex);
+
+                char* folder_listing = malloc(BUFFER_SIZE);
+                if (folder_listing == NULL) {
+                    log_to_file(client_addr_str, username, "CRITICAL: NM failed to allocate memory for folder listing.");
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: Server memory allocation failed.\n", ERROR_SERVER_ERROR);
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+
+                int result = get_folder_listing_from_ss(ss_ip, ss_nm_port, folder_path, folder_listing, BUFFER_SIZE);
+
+                if (result == 0) {
+                    printf("  Folder listing:\n%s\n", folder_listing);
+                    log_to_file(client_addr_str, username, "RES: VIEWFOLDER '%s' success.", foldername);
+                    write(client_socket, folder_listing, strlen(folder_listing));
+                } else {
+                    log_to_file(client_addr_str, username, "RES: VIEWFOLDER '%s' failed: SS failed to get listing.", foldername);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: Storage Server failed to get folder listing.\n", ERROR_SERVER_ERROR);
+                    write(client_socket, err_msg, strlen(err_msg));
+                }
+                free(folder_listing);
+
+            } else if (strncmp(buffer, "MOVE", 4) == 0) {
+                char filename[256], foldername[256];
+                if (sscanf(buffer, "MOVE %s %s", filename, foldername) != 2) {
+                    snprintf(err_msg, sizeof(err_msg), "ERROR: Invalid MOVE format. Use: MOVE <filename> <foldername>\n");
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+                printf("Client requested MOVE '%s' to folder '%s'\n", filename, foldername);
+                log_to_file(client_addr_str, username, "REQ: MOVE '%s' to '%s'", filename, foldername);
+
+                char folder_path[512];
+                snprintf(folder_path, sizeof(folder_path), "/%s", foldername);
+
+                pthread_mutex_lock(&g_system_mutex);
+                
+                FolderNode* folder = find_folder(folder_path);
+                if (folder == NULL) {
+                    pthread_mutex_unlock(&g_system_mutex);
+                    log_to_file(client_addr_str, username, "RES: MOVE '%s' failed: Folder not found.", filename);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: Folder not found.\n", ERROR_FOLDER_NOT_FOUND);
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+
+                FileLocation* file = hash_map_find_unsafe(filename);
+                if (file == NULL) {
+                    pthread_mutex_unlock(&g_system_mutex);
+                    log_to_file(client_addr_str, username, "RES: MOVE '%s' failed: File not found.", filename);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: File not found.\n", ERROR_FILE_NOT_FOUND);
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+
+                // Check if user has write permission
+                if (!check_permission(file, username, 'W')) {
+                    pthread_mutex_unlock(&g_system_mutex);
+                    log_to_file(client_addr_str, username, "RES: MOVE '%s' failed: Access Denied.", filename);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: Access Denied (Write permission required).\n", ERROR_ACCESS_DENIED);
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+
+                char ss_ip[INET_ADDRSTRLEN];
+                int ss_nm_port = -1;
+                for (int j = 0; j < g_num_servers; j++) {
+                    if (strcmp(server_list[j].ss_ip_addr, file->ss_ip_addr) == 0 &&
+                        server_list[j].ss_client_port == file->ss_client_port) 
+                    {
+                        strncpy(ss_ip, server_list[j].ss_ip_addr, INET_ADDRSTRLEN);
+                        ss_nm_port = server_list[j].ss_nm_port;
+                        break;
+                    }
+                }
+
+                pthread_mutex_unlock(&g_system_mutex);
+
+                if (ss_nm_port == -1) {
+                    log_to_file(client_addr_str, username, "RES: MOVE '%s' failed: SS not found.", filename);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: Storage Server not found.\n", ERROR_SERVER_ERROR);
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+
+                int result = forward_move_to_ss(ss_ip, ss_nm_port, filename, folder_path);
+
+                if (result == 0) {
+                    pthread_mutex_lock(&g_system_mutex);
+                    file = hash_map_find_unsafe(filename); // Re-find after lock
+                    if (file != NULL) {
+                        strncpy(file->folder_path, folder_path, 511);
+                        file->folder_path[511] = '\0';
+                        save_registry_to_disk_unsafe();
+                    }
+                    pthread_mutex_unlock(&g_system_mutex);
+
+                    printf("  Successfully moved '%s' to folder '%s'\n", filename, foldername);
+                    log_to_file(client_addr_str, username, "RES: MOVE '%s' to '%s' success.", filename, foldername);
+                    write(client_socket, "File moved successfully.\n", sizeof("File moved successfully.\n") - 1);
+                } else {
+                    log_to_file(client_addr_str, username, "RES: MOVE '%s' failed: SS failed to move file.", filename);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: Storage Server failed to move file.\n", ERROR_SERVER_ERROR);
+                    write(client_socket, err_msg, strlen(err_msg));
+                }
 
             } else if (strncmp(buffer, "CREATE", 6) == 0) {
                 char filename[256];
@@ -650,6 +1034,7 @@ void* handle_connection(void* arg) {
                     new_file.num_permissions = 0; 
                     strncpy(new_file.last_accessed_by, "N/A", 255);
                     strncpy(new_file.last_accessed_ts, "N/A", 127);
+                    strncpy(new_file.folder_path, "/", 511); // Root folder by default
                     
                     pthread_mutex_lock(&g_system_mutex);
                     hash_map_insert_unsafe(new_file);
@@ -1148,7 +1533,7 @@ void* handle_connection(void* arg) {
                 }
             
             } else if (strncmp(buffer, "WRITE", 5) == 0) {
-                char filename[256];
+                char filename[1024];
                 int sentence_num;
                 if (sscanf(buffer, "WRITE %s %d", filename, &sentence_num) != 2) {
                     snprintf(err_msg, sizeof(err_msg), "ERROR: Invalid WRITE format. Use: WRITE <filename> <sentence_num>\n");
@@ -1193,6 +1578,18 @@ void* handle_connection(void* arg) {
                             
                             strncpy(ss_ip, file->ss_ip_addr, INET_ADDRSTRLEN);
                             ss_port = file->ss_client_port;
+                            
+                            // Build full file path including folder for SS
+                            if (strlen(file->folder_path) > 0 && strcmp(file->folder_path, "/") != 0) {
+                                // File is in a folder - send full path
+                                snprintf(filename, 1024, "%s/%s", 
+                                        file->folder_path + 1, file->filename); // +1 to skip leading '/'
+                            } else {
+                                // File is in root - use base filename  
+                                strncpy(filename, file->filename, 1023);
+                                filename[1023] = '\0';
+                            }
+                            
                             printf("  Lock granted to '%s'\n", username);
                             log_to_file(client_addr_str, username, "INFO: Lock granted for '%s' (sent %d).", filename, sentence_num);
                         } else if (already_locked) {
@@ -1218,8 +1615,8 @@ void* handle_connection(void* arg) {
                     log_to_file(client_addr_str, username, "RES: WRITE for '%s' failed: System is at maximum lock capacity.", filename);
                     snprintf(response_buffer, sizeof(response_buffer), "ERROR %d: System is at maximum lock capacity. Try again later.\n", ERROR_MAX_LOCKS);
                 } else {
-                    log_to_file(client_addr_str, username, "RES: WRITE for '%s' success. Sending SS_LOCATION %s %d", filename, ss_ip, ss_port);
-                    snprintf(response_buffer, sizeof(response_buffer), "SS_LOCATION %s %d\n", ss_ip, ss_port);
+                    log_to_file(client_addr_str, username, "RES: WRITE for '%s' success. Sending SS_LOCATION %s %d %s", file->filename, ss_ip, ss_port, filename);
+                    snprintf(response_buffer, sizeof(response_buffer), "SS_LOCATION %s %d %s\n", ss_ip, ss_port, filename);
                 }
                 write(client_socket, response_buffer, strlen(response_buffer));
             
