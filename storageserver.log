@@ -143,3 +143,130 @@
 [2025-11-11 01:19:26] [Client: 127.0.0.1:57580] [Type: Client] REQ: READ_FILE for '5.txt'
 [2025-11-11 01:19:26] [Client: 127.0.0.1:57580] [Type: Client] RES: Successfully sent file '5.txt'.
 [2025-11-11 01:19:26] [Client: 127.0.0.1:57580] [Type: Client] INFO: Connection closed.
+[2025-11-12 21:02:49] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-12 21:02:49] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-12 21:02:49] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-12 21:02:49] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-12 21:03:30] [Client: 127.0.0.1:54836] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 21:03:30] [Client: 127.0.0.1:54836] [Type: NameServer] REQ: CREATE_FOLDER for '/hi'
+[2025-11-12 21:03:30] [Client: 127.0.0.1:54836] [Type: NameServer] RES: CREATE_FOLDER for '/hi' success.
+[2025-11-12 21:03:30] [Client: 127.0.0.1:54836] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 21:04:13] [Client: 127.0.0.1:54476] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 21:04:13] [Client: 127.0.0.1:54476] [Type: NameServer] REQ: CREATE_FOLDER for '/hi2'
+[2025-11-12 21:04:13] [Client: 127.0.0.1:54476] [Type: NameServer] RES: CREATE_FOLDER for '/hi2' success.
+[2025-11-12 21:04:13] [Client: 127.0.0.1:54476] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 21:14:08] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-12 21:14:08] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-12 21:14:08] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-12 21:14:08] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-12 21:14:08] [Client: Internal] [Type: System] CRITICAL: (Client-Server) bind failed: Address already in use
+[2025-11-12 21:14:32] [Client: 127.0.0.1:40776] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 21:14:32] [Client: 127.0.0.1:40776] [Type: NameServer] REQ: CREATE_FOLDER for '/u'
+[2025-11-12 21:14:32] [Client: 127.0.0.1:40776] [Type: NameServer] RES: CREATE_FOLDER for '/u' success.
+[2025-11-12 21:14:32] [Client: 127.0.0.1:40776] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 21:14:46] [Client: 127.0.0.1:34790] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 21:14:46] [Client: 127.0.0.1:34790] [Type: NameServer] REQ: CREATE_FOLDER for '/u/uu'
+[2025-11-12 21:14:46] [Client: 127.0.0.1:34790] [Type: NameServer] RES: CREATE_FOLDER for '/u/uu' success.
+[2025-11-12 21:14:46] [Client: 127.0.0.1:34790] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 21:15:37] [Client: 127.0.0.1:37702] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 21:15:37] [Client: 127.0.0.1:37702] [Type: NameServer] REQ: CREATE_FILE for 'u/itsu.txt'
+[2025-11-12 21:15:37] [Client: 127.0.0.1:37702] [Type: NameServer] RES: CREATE_FILE for 'u/itsu.txt' success.
+[2025-11-12 21:15:37] [Client: 127.0.0.1:37702] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 21:16:15] [Client: 127.0.0.1:44034] [Type: Client] INFO: Accepted new connection.
+[2025-11-12 21:16:15] [Client: 127.0.0.1:44034] [Type: Client] REQ: READ_FILE for 'u/itsu.txt'
+[2025-11-12 21:16:15] [Client: 127.0.0.1:44034] [Type: Client] RES: Successfully sent file 'u/itsu.txt'.
+[2025-11-12 21:16:15] [Client: 127.0.0.1:44034] [Type: Client] INFO: Connection closed.
+[2025-11-12 21:49:08] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-12 21:49:08] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-12 21:49:08] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-12 21:49:08] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-12 21:49:08] [Client: Internal] [Type: System] CRITICAL: (NM-Server) bind failed: Address already in use
+[2025-11-12 21:49:08] [Client: Internal] [Type: System] CRITICAL: (Client-Server) bind failed: Address already in use
+[2025-11-12 21:54:15] [Client: 127.0.0.1:34086] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 21:54:15] [Client: 127.0.0.1:34086] [Type: NameServer] REQ: CREATE_FILE for '7.txt'
+[2025-11-12 21:54:15] [Client: 127.0.0.1:34086] [Type: NameServer] RES: CREATE_FILE for '7.txt' success.
+[2025-11-12 21:54:15] [Client: 127.0.0.1:34086] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 21:57:08] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-12 21:57:08] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-12 21:57:08] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-12 21:57:08] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-12 21:57:15] [Client: 127.0.0.1:56180] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 21:57:15] [Client: 127.0.0.1:56180] [Type: NameServer] REQ: CREATE_FILE for '8.txt'
+[2025-11-12 21:57:15] [Client: 127.0.0.1:56180] [Type: NameServer] RES: CREATE_FILE for '8.txt' success.
+[2025-11-12 21:57:15] [Client: 127.0.0.1:56180] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 22:04:58] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-12 22:04:58] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-12 22:04:58] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-12 22:04:58] [Client: Internal] [Type: System] CRITICAL: (NM-Server) bind failed: Address already in use
+[2025-11-12 22:07:22] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-12 22:07:22] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-12 22:07:22] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-12 22:07:22] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-12 22:08:07] [Client: 127.0.0.1:55144] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 22:08:07] [Client: 127.0.0.1:55144] [Type: NameServer] REQ: CREATE_FILE for '9.txt'
+[2025-11-12 22:08:07] [Client: 127.0.0.1:55144] [Type: NameServer] RES: CREATE_FILE for '9.txt' success.
+[2025-11-12 22:08:07] [Client: 127.0.0.1:55144] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 22:09:18] [Client: 127.0.0.1:33502] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 22:09:18] [Client: 127.0.0.1:33502] [Type: NameServer] REQ: CHECKPOINT for '9.txt' with tag 'v1'
+[2025-11-12 22:09:18] [Client: 127.0.0.1:33502] [Type: NameServer] RES: CHECKPOINT 'v1' for '9.txt' success.
+[2025-11-12 22:09:18] [Client: 127.0.0.1:33502] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 22:12:21] [Client: 127.0.0.1:51638] [Type: Client] INFO: Accepted new connection.
+[2025-11-12 22:12:21] [Client: 127.0.0.1:51638] [Type: Client] REQ: WRITE_START for '9.txt', sentence 0
+[2025-11-12 22:12:21] [Client: 127.0.0.1:51638] [Type: Client] ACK: WRITE_START for '9.txt'. Entering session.
+[2025-11-12 22:12:23] [Client: 127.0.0.1:51638] [Type: Client] ACK: WRITE for '9.txt' success (sent 0, word 0).
+[2025-11-12 22:12:29] [Client: 127.0.0.1:51638] [Type: Client] REQ: ETIRW for '9.txt'. Finalizing changes.
+[2025-11-12 22:12:29] [Client: 127.0.0.1:51638] [Type: Client] ACK: Successfully saved changes to '9.txt'.
+[2025-11-12 22:12:29] [Client: 127.0.0.1:51638] [Type: Client] INFO: Write session for '9.txt' ended.
+[2025-11-12 22:12:29] [Client: 127.0.0.1:51638] [Type: Client] INFO: Connection closed.
+[2025-11-12 22:23:34] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-12 22:23:34] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-12 22:23:34] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-12 22:23:34] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-12 22:26:14] [Client: 127.0.0.1:34486] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 22:26:14] [Client: 127.0.0.1:34486] [Type: NameServer] REQ: CREATE_FILE for '10.txt'
+[2025-11-12 22:26:14] [Client: 127.0.0.1:34486] [Type: NameServer] RES: CREATE_FILE for '10.txt' success.
+[2025-11-12 22:26:14] [Client: 127.0.0.1:34486] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 22:26:24] [Client: 127.0.0.1:44080] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 22:26:24] [Client: 127.0.0.1:44080] [Type: NameServer] REQ: CHECKPOINT for '10.txt' with tag 'v1'
+[2025-11-12 22:26:24] [Client: 127.0.0.1:44080] [Type: NameServer] RES: CHECKPOINT 'v1' for '10.txt' success.
+[2025-11-12 22:26:24] [Client: 127.0.0.1:44080] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 22:27:54] [Client: 127.0.0.1:54330] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 22:27:54] [Client: 127.0.0.1:54330] [Type: NameServer] REQ: VIEWCHECKPOINT for '10.txt' with tag 'v1'
+[2025-11-12 22:27:54] [Client: 127.0.0.1:54330] [Type: NameServer] RES: VIEWCHECKPOINT for '10.txt' tag 'v1' success.
+[2025-11-12 22:27:54] [Client: 127.0.0.1:54330] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 22:28:17] [Client: 127.0.0.1:38106] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 22:28:17] [Client: 127.0.0.1:38106] [Type: NameServer] REQ: LISTCHECKPOINTS for '10.txt'
+[2025-11-12 22:28:17] [Client: 127.0.0.1:38106] [Type: NameServer] RES: LISTCHECKPOINTS for '10.txt' success (1 checkpoints).
+[2025-11-12 22:28:17] [Client: 127.0.0.1:38106] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 22:28:53] [Client: 127.0.0.1:51952] [Type: Client] INFO: Accepted new connection.
+[2025-11-12 22:28:53] [Client: 127.0.0.1:51952] [Type: Client] REQ: WRITE_START for '10.txt', sentence 0
+[2025-11-12 22:28:53] [Client: 127.0.0.1:51952] [Type: Client] ACK: WRITE_START for '10.txt'. Entering session.
+[2025-11-12 22:28:57] [Client: 127.0.0.1:51952] [Type: Client] ACK: WRITE for '10.txt' success (sent 0, word 0).
+[2025-11-12 22:29:03] [Client: 127.0.0.1:51952] [Type: Client] REQ: ETIRW for '10.txt'. Finalizing changes.
+[2025-11-12 22:29:03] [Client: 127.0.0.1:51952] [Type: Client] ACK: Successfully saved changes to '10.txt'.
+[2025-11-12 22:29:03] [Client: 127.0.0.1:51952] [Type: Client] INFO: Write session for '10.txt' ended.
+[2025-11-12 22:29:03] [Client: 127.0.0.1:51952] [Type: Client] INFO: Connection closed.
+[2025-11-12 22:29:14] [Client: 127.0.0.1:34716] [Type: Client] INFO: Accepted new connection.
+[2025-11-12 22:29:14] [Client: 127.0.0.1:34716] [Type: Client] REQ: READ_FILE for '10.txt'
+[2025-11-12 22:29:14] [Client: 127.0.0.1:34716] [Type: Client] RES: Successfully sent file '10.txt'.
+[2025-11-12 22:29:14] [Client: 127.0.0.1:34716] [Type: Client] INFO: Connection closed.
+[2025-11-12 22:29:26] [Client: 127.0.0.1:53226] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 22:29:26] [Client: 127.0.0.1:53226] [Type: NameServer] REQ: CHECKPOINT for '10.txt' with tag 'v2'
+[2025-11-12 22:29:26] [Client: 127.0.0.1:53226] [Type: NameServer] RES: CHECKPOINT 'v2' for '10.txt' success.
+[2025-11-12 22:29:26] [Client: 127.0.0.1:53226] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 22:29:34] [Client: 127.0.0.1:36806] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 22:29:34] [Client: 127.0.0.1:36806] [Type: NameServer] REQ: REVERT '10.txt' to checkpoint 'v1'
+[2025-11-12 22:29:34] [Client: 127.0.0.1:36806] [Type: NameServer] RES: REVERT '10.txt' to 'v1' success.
+[2025-11-12 22:29:34] [Client: 127.0.0.1:36806] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 22:29:38] [Client: 127.0.0.1:48674] [Type: Client] INFO: Accepted new connection.
+[2025-11-12 22:29:38] [Client: 127.0.0.1:48674] [Type: Client] REQ: READ_FILE for '10.txt'
+[2025-11-12 22:29:38] [Client: 127.0.0.1:48674] [Type: Client] RES: Successfully sent file '10.txt'.
+[2025-11-12 22:29:38] [Client: 127.0.0.1:48674] [Type: Client] INFO: Connection closed.
+[2025-11-12 22:29:50] [Client: 127.0.0.1:48058] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-12 22:29:50] [Client: 127.0.0.1:48058] [Type: NameServer] REQ: REVERT '10.txt' to checkpoint 'v2'
+[2025-11-12 22:29:50] [Client: 127.0.0.1:48058] [Type: NameServer] RES: REVERT '10.txt' to 'v2' success.
+[2025-11-12 22:29:50] [Client: 127.0.0.1:48058] [Type: NameServer] INFO: Connection closed.
+[2025-11-12 22:29:57] [Client: 127.0.0.1:48726] [Type: Client] INFO: Accepted new connection.
+[2025-11-12 22:29:57] [Client: 127.0.0.1:48726] [Type: Client] REQ: READ_FILE for '10.txt'
+[2025-11-12 22:29:57] [Client: 127.0.0.1:48726] [Type: Client] RES: Successfully sent file '10.txt'.
+[2025-11-12 22:29:57] [Client: 127.0.0.1:48726] [Type: Client] INFO: Connection closed.

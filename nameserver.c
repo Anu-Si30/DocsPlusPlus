@@ -435,6 +435,204 @@ int get_folder_listing_from_ss(const char* ss_ip, int ss_nm_port, const char* fo
     return 0;
 }
 
+// Forward CHECKPOINT command to storage server
+int forward_checkpoint_to_ss(const char* ss_ip, int ss_nm_port, const char* filename, const char* checkpoint_tag, char* out_response, int out_len) {
+    int ss_sock;
+    struct sockaddr_in ss_addr;
+    char command[BUFFER_SIZE];
+    char response[BUFFER_SIZE];
+
+    if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("NM (SS-Client): socket failed");
+        return -1;
+    }
+    ss_addr.sin_family = AF_INET;
+    ss_addr.sin_port = htons(ss_nm_port);
+    if (inet_pton(AF_INET, ss_ip, &ss_addr.sin_addr) <= 0) {
+        perror("NM (SS-Client): invalid address");
+        close(ss_sock);
+        return -1;
+    }
+    if (connect(ss_sock, (struct sockaddr*)&ss_addr, sizeof(ss_addr)) < 0) {
+        perror("NM (SS-Client): connect to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    
+    snprintf(command, sizeof(command), "CHECKPOINT %s %s\n", filename, checkpoint_tag);
+    if (write(ss_sock, command, strlen(command)) < 0) {
+        perror("NM (SS-Client): write to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    
+    ssize_t bytes_read = read(ss_sock, response, sizeof(response) - 1);
+    close(ss_sock);
+    
+    if (bytes_read <= 0) {
+        printf("NM (SS-Client): No response from SS.\n");
+        return -1;
+    }
+    response[bytes_read] = '\0';
+    
+    if (out_response) {
+        snprintf(out_response, out_len, "%s", response);
+    }
+    
+    if (strncmp(response, "ACK_CHECKPOINT_SUCCESS", 22) == 0) {
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
+// Forward LISTCHECKPOINTS command to storage server
+int forward_listcheckpoints_to_ss(const char* ss_ip, int ss_nm_port, const char* filename, char* out_buffer, int out_len) {
+    int ss_sock;
+    struct sockaddr_in ss_addr;
+    char command[BUFFER_SIZE];
+
+    if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("NM (SS-Client): socket failed");
+        return -1;
+    }
+    ss_addr.sin_family = AF_INET;
+    ss_addr.sin_port = htons(ss_nm_port);
+    if (inet_pton(AF_INET, ss_ip, &ss_addr.sin_addr) <= 0) {
+        perror("NM (SS-Client): invalid address");
+        close(ss_sock);
+        return -1;
+    }
+    if (connect(ss_sock, (struct sockaddr*)&ss_addr, sizeof(ss_addr)) < 0) {
+        perror("NM (SS-Client): connect to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    
+    snprintf(command, sizeof(command), "LISTCHECKPOINTS %s\n", filename);
+    if (write(ss_sock, command, strlen(command)) < 0) {
+        perror("NM (SS-Client): write to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    
+    ssize_t total_bytes_read = 0;
+    ssize_t bytes_read;
+    while (total_bytes_read < out_len - 1 && 
+           (bytes_read = read(ss_sock, out_buffer + total_bytes_read, out_len - 1 - total_bytes_read)) > 0) {
+        total_bytes_read += bytes_read;
+    }
+    
+    out_buffer[total_bytes_read] = '\0';
+    close(ss_sock);
+    
+    if (bytes_read < 0) {
+        perror("NM (SS-Client): read checkpoint list failed");
+        return -1;
+    }
+    
+    return 0;
+}
+
+// Forward VIEWCHECKPOINT command to storage server
+int forward_viewcheckpoint_to_ss(const char* ss_ip, int ss_nm_port, const char* filename, const char* checkpoint_tag, char* out_buffer, int out_len) {
+    int ss_sock;
+    struct sockaddr_in ss_addr;
+    char command[BUFFER_SIZE];
+
+    if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("NM (SS-Client): socket failed");
+        return -1;
+    }
+    ss_addr.sin_family = AF_INET;
+    ss_addr.sin_port = htons(ss_nm_port);
+    if (inet_pton(AF_INET, ss_ip, &ss_addr.sin_addr) <= 0) {
+        perror("NM (SS-Client): invalid address");
+        close(ss_sock);
+        return -1;
+    }
+    if (connect(ss_sock, (struct sockaddr*)&ss_addr, sizeof(ss_addr)) < 0) {
+        perror("NM (SS-Client): connect to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    
+    snprintf(command, sizeof(command), "VIEWCHECKPOINT %s %s\n", filename, checkpoint_tag);
+    if (write(ss_sock, command, strlen(command)) < 0) {
+        perror("NM (SS-Client): write to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    
+    ssize_t total_bytes_read = 0;
+    ssize_t bytes_read;
+    while (total_bytes_read < out_len - 1 && 
+           (bytes_read = read(ss_sock, out_buffer + total_bytes_read, out_len - 1 - total_bytes_read)) > 0) {
+        total_bytes_read += bytes_read;
+    }
+    
+    out_buffer[total_bytes_read] = '\0';
+    close(ss_sock);
+    
+    if (bytes_read < 0) {
+        perror("NM (SS-Client): read checkpoint content failed");
+        return -1;
+    }
+    
+    return 0;
+}
+
+// Forward REVERT command to storage server
+int forward_revert_to_ss(const char* ss_ip, int ss_nm_port, const char* filename, const char* checkpoint_tag, char* out_response, int out_len) {
+    int ss_sock;
+    struct sockaddr_in ss_addr;
+    char command[BUFFER_SIZE];
+    char response[BUFFER_SIZE];
+
+    if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("NM (SS-Client): socket failed");
+        return -1;
+    }
+    ss_addr.sin_family = AF_INET;
+    ss_addr.sin_port = htons(ss_nm_port);
+    if (inet_pton(AF_INET, ss_ip, &ss_addr.sin_addr) <= 0) {
+        perror("NM (SS-Client): invalid address");
+        close(ss_sock);
+        return -1;
+    }
+    if (connect(ss_sock, (struct sockaddr*)&ss_addr, sizeof(ss_addr)) < 0) {
+        perror("NM (SS-Client): connect to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    
+    snprintf(command, sizeof(command), "REVERT %s %s\n", filename, checkpoint_tag);
+    if (write(ss_sock, command, strlen(command)) < 0) {
+        perror("NM (SS-Client): write to SS failed");
+        close(ss_sock);
+        return -1;
+    }
+    
+    ssize_t bytes_read = read(ss_sock, response, sizeof(response) - 1);
+    close(ss_sock);
+    
+    if (bytes_read <= 0) {
+        printf("NM (SS-Client): No response from SS.\n");
+        return -1;
+    }
+    response[bytes_read] = '\0';
+    
+    if (out_response) {
+        snprintf(out_response, out_len, "%s", response);
+    }
+    
+    if (strncmp(response, "ACK_REVERT_SUCCESS", 18) == 0) {
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
 // Find folder in folder list
 FolderNode* find_folder(const char* folder_path) {
     FolderNode* current = g_folder_list;
@@ -578,7 +776,126 @@ void* handle_connection(void* arg) {
             buffer[bytes_read] = '\0';
             buffer[strcspn(buffer, "\n")] = 0; // Remove trailing newline
 
-            if (strncmp(buffer, "VIEW", 4) == 0) {
+            // Check more specific commands BEFORE generic ones to avoid prefix matching
+            if (strncmp(buffer, "VIEWCHECKPOINT", 14) == 0) {
+                char filename[256], checkpoint_tag[128];
+                if (sscanf(buffer, "VIEWCHECKPOINT %s %s", filename, checkpoint_tag) != 2) {
+                    snprintf(err_msg, sizeof(err_msg), "ERROR: Invalid VIEWCHECKPOINT format. Use: VIEWCHECKPOINT <filename> <tag>\n");
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+                printf("Client requested VIEWCHECKPOINT for '%s' tag '%s'\n", filename, checkpoint_tag);
+                log_to_file(client_addr_str, username, "REQ: VIEWCHECKPOINT for '%s' tag '%s'", filename, checkpoint_tag);
+
+                char ss_ip[INET_ADDRSTRLEN];
+                int ss_nm_port = -1;
+                int permitted = 0;
+                FileLocation* file = NULL;
+
+                pthread_mutex_lock(&g_system_mutex);
+                
+                file = cache_get_unsafe(filename);
+                if (file == NULL) {
+                    file = hash_map_find_unsafe(filename);
+                    if (file != NULL) cache_put_unsafe(filename, file);
+                }
+                
+                if (file != NULL) {
+                    if (check_permission(file, username, 'R')) {
+                        permitted = 1;
+                        for (int j = 0; j < g_num_servers; j++) {
+                            if (strcmp(server_list[j].ss_ip_addr, file->ss_ip_addr) == 0 &&
+                                server_list[j].ss_client_port == file->ss_client_port) 
+                            {
+                                strncpy(ss_ip, server_list[j].ss_ip_addr, INET_ADDRSTRLEN);
+                                ss_nm_port = server_list[j].ss_nm_port;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                pthread_mutex_unlock(&g_system_mutex);
+
+                if (!permitted) {
+                    printf("  Access Denied or file not found.\n");
+                    log_to_file(client_addr_str, username, "RES: VIEWCHECKPOINT denied for '%s'.", filename);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: File not found or access denied.\n", ERROR_FILE_NOT_FOUND);
+                    write(client_socket, err_msg, strlen(err_msg));
+                } else {
+                    char checkpoint_content[BUFFER_SIZE];
+                    if (forward_viewcheckpoint_to_ss(ss_ip, ss_nm_port, filename, checkpoint_tag, checkpoint_content, sizeof(checkpoint_content)) == 0) {
+                        printf("  Sending checkpoint content to client.\n");
+                        log_to_file(client_addr_str, username, "RES: VIEWCHECKPOINT for '%s' tag '%s' success.", filename, checkpoint_tag);
+                        write(client_socket, checkpoint_content, strlen(checkpoint_content));
+                    } else {
+                        printf("  Failed to view checkpoint.\n");
+                        log_to_file(client_addr_str, username, "RES: VIEWCHECKPOINT for '%s' failed.", filename);
+                        snprintf(err_msg, sizeof(err_msg), "ERROR %d: Failed to view checkpoint.\n", ERROR_SERVER_ERROR);
+                        write(client_socket, err_msg, strlen(err_msg));
+                    }
+                }
+
+            } else if (strncmp(buffer, "LISTCHECKPOINTS", 15) == 0) {
+                char filename[256];
+                if (sscanf(buffer, "LISTCHECKPOINTS %s", filename) != 1) {
+                    snprintf(err_msg, sizeof(err_msg), "ERROR: Invalid LISTCHECKPOINTS format. Use: LISTCHECKPOINTS <filename>\n");
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+                printf("Client requested LISTCHECKPOINTS for '%s'\n", filename);
+                log_to_file(client_addr_str, username, "REQ: LISTCHECKPOINTS for '%s'", filename);
+
+                char ss_ip[INET_ADDRSTRLEN];
+                int ss_nm_port = -1;
+                int permitted = 0;
+                FileLocation* file = NULL;
+
+                pthread_mutex_lock(&g_system_mutex);
+                
+                file = cache_get_unsafe(filename);
+                if (file == NULL) {
+                    file = hash_map_find_unsafe(filename);
+                    if (file != NULL) cache_put_unsafe(filename, file);
+                }
+                
+                if (file != NULL) {
+                    if (check_permission(file, username, 'R')) {
+                        permitted = 1;
+                        for (int j = 0; j < g_num_servers; j++) {
+                            if (strcmp(server_list[j].ss_ip_addr, file->ss_ip_addr) == 0 &&
+                                server_list[j].ss_client_port == file->ss_client_port) 
+                            {
+                                strncpy(ss_ip, server_list[j].ss_ip_addr, INET_ADDRSTRLEN);
+                                ss_nm_port = server_list[j].ss_nm_port;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                pthread_mutex_unlock(&g_system_mutex);
+
+                if (!permitted) {
+                    printf("  Access Denied or file not found.\n");
+                    log_to_file(client_addr_str, username, "RES: LISTCHECKPOINTS denied for '%s'.", filename);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: File not found or access denied.\n", ERROR_FILE_NOT_FOUND);
+                    write(client_socket, err_msg, strlen(err_msg));
+                } else {
+                    char checkpoint_list[BUFFER_SIZE];
+                    if (forward_listcheckpoints_to_ss(ss_ip, ss_nm_port, filename, checkpoint_list, sizeof(checkpoint_list)) == 0) {
+                        printf("  Sending checkpoint list to client.\n");
+                        log_to_file(client_addr_str, username, "RES: LISTCHECKPOINTS for '%s' success.", filename);
+                        write(client_socket, checkpoint_list, strlen(checkpoint_list));
+                    } else {
+                        printf("  Failed to list checkpoints.\n");
+                        log_to_file(client_addr_str, username, "RES: LISTCHECKPOINTS for '%s' failed.", filename);
+                        snprintf(err_msg, sizeof(err_msg), "ERROR %d: Failed to list checkpoints.\n", ERROR_SERVER_ERROR);
+                        write(client_socket, err_msg, strlen(err_msg));
+                    }
+                }
+
+            } else if (strncmp(buffer, "VIEW", 4) == 0) {
                 printf("Client requested VIEW\n");
                 log_to_file(client_addr_str, username, "REQ: VIEW");
                 
@@ -1658,6 +1975,126 @@ void* handle_connection(void* arg) {
                     write(client_socket, err_msg, strlen(err_msg));
                 }
                 pthread_mutex_unlock(&g_system_mutex);
+
+            } else if (strncmp(buffer, "CHECKPOINT", 10) == 0) {
+                char filename[256], checkpoint_tag[128];
+                if (sscanf(buffer, "CHECKPOINT %s %s", filename, checkpoint_tag) != 2) {
+                    snprintf(err_msg, sizeof(err_msg), "ERROR: Invalid CHECKPOINT format. Use: CHECKPOINT <filename> <tag>\n");
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+                printf("Client requested CHECKPOINT for '%s' with tag '%s'\n", filename, checkpoint_tag);
+                log_to_file(client_addr_str, username, "REQ: CHECKPOINT for '%s' with tag '%s'", filename, checkpoint_tag);
+
+                char ss_ip[INET_ADDRSTRLEN];
+                int ss_nm_port = -1;
+                int permitted = 0;
+                FileLocation* file = NULL;
+
+                pthread_mutex_lock(&g_system_mutex);
+                
+                file = cache_get_unsafe(filename);
+                if (file == NULL) {
+                    file = hash_map_find_unsafe(filename);
+                    if (file != NULL) cache_put_unsafe(filename, file);
+                }
+                
+                if (file != NULL) {
+                    if (check_permission(file, username, 'R')) {
+                        permitted = 1;
+                        for (int j = 0; j < g_num_servers; j++) {
+                            if (strcmp(server_list[j].ss_ip_addr, file->ss_ip_addr) == 0 &&
+                                server_list[j].ss_client_port == file->ss_client_port) 
+                            {
+                                strncpy(ss_ip, server_list[j].ss_ip_addr, INET_ADDRSTRLEN);
+                                ss_nm_port = server_list[j].ss_nm_port;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                pthread_mutex_unlock(&g_system_mutex);
+
+                if (!permitted) {
+                    printf("  Access Denied or file not found.\n");
+                    log_to_file(client_addr_str, username, "RES: CHECKPOINT denied for '%s'.", filename);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: File not found or access denied.\n", ERROR_FILE_NOT_FOUND);
+                    write(client_socket, err_msg, strlen(err_msg));
+                } else {
+                    char response[256];
+                    if (forward_checkpoint_to_ss(ss_ip, ss_nm_port, filename, checkpoint_tag, response, sizeof(response)) == 0) {
+                        printf("  Checkpoint created successfully.\n");
+                        log_to_file(client_addr_str, username, "RES: CHECKPOINT for '%s' tag '%s' success.", filename, checkpoint_tag);
+                        snprintf(err_msg, sizeof(err_msg), "SUCCESS: Checkpoint created.\n");
+                        write(client_socket, err_msg, strlen(err_msg));
+                    } else {
+                        printf("  Checkpoint creation failed.\n");
+                        log_to_file(client_addr_str, username, "RES: CHECKPOINT for '%s' failed.", filename);
+                        snprintf(err_msg, sizeof(err_msg), "ERROR %d: Failed to create checkpoint.\n", ERROR_SERVER_ERROR);
+                        write(client_socket, err_msg, strlen(err_msg));
+                    }
+                }
+
+            } else if (strncmp(buffer, "REVERT", 6) == 0) {
+                char filename[256], checkpoint_tag[128];
+                if (sscanf(buffer, "REVERT %s %s", filename, checkpoint_tag) != 2) {
+                    snprintf(err_msg, sizeof(err_msg), "ERROR: Invalid REVERT format. Use: REVERT <filename> <tag>\n");
+                    write(client_socket, err_msg, strlen(err_msg));
+                    continue;
+                }
+                printf("Client requested REVERT for '%s' to tag '%s'\n", filename, checkpoint_tag);
+                log_to_file(client_addr_str, username, "REQ: REVERT for '%s' to tag '%s'", filename, checkpoint_tag);
+
+                char ss_ip[INET_ADDRSTRLEN];
+                int ss_nm_port = -1;
+                int permitted = 0;
+                FileLocation* file = NULL;
+
+                pthread_mutex_lock(&g_system_mutex);
+                
+                file = cache_get_unsafe(filename);
+                if (file == NULL) {
+                    file = hash_map_find_unsafe(filename);
+                    if (file != NULL) cache_put_unsafe(filename, file);
+                }
+                
+                if (file != NULL) {
+                    if (check_permission(file, username, 'W')) {
+                        permitted = 1;
+                        for (int j = 0; j < g_num_servers; j++) {
+                            if (strcmp(server_list[j].ss_ip_addr, file->ss_ip_addr) == 0 &&
+                                server_list[j].ss_client_port == file->ss_client_port) 
+                            {
+                                strncpy(ss_ip, server_list[j].ss_ip_addr, INET_ADDRSTRLEN);
+                                ss_nm_port = server_list[j].ss_nm_port;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                pthread_mutex_unlock(&g_system_mutex);
+
+                if (!permitted) {
+                    printf("  Access Denied or file not found.\n");
+                    log_to_file(client_addr_str, username, "RES: REVERT denied for '%s'.", filename);
+                    snprintf(err_msg, sizeof(err_msg), "ERROR %d: File not found or access denied (write permission required).\n", ERROR_ACCESS_DENIED);
+                    write(client_socket, err_msg, strlen(err_msg));
+                } else {
+                    char response[256];
+                    if (forward_revert_to_ss(ss_ip, ss_nm_port, filename, checkpoint_tag, response, sizeof(response)) == 0) {
+                        printf("  File reverted successfully.\n");
+                        log_to_file(client_addr_str, username, "RES: REVERT for '%s' to tag '%s' success.", filename, checkpoint_tag);
+                        snprintf(err_msg, sizeof(err_msg), "SUCCESS: File reverted to checkpoint.\n");
+                        write(client_socket, err_msg, strlen(err_msg));
+                    } else {
+                        printf("  Revert failed.\n");
+                        log_to_file(client_addr_str, username, "RES: REVERT for '%s' failed.", filename);
+                        snprintf(err_msg, sizeof(err_msg), "ERROR %d: Failed to revert file.\n", ERROR_SERVER_ERROR);
+                        write(client_socket, err_msg, strlen(err_msg));
+                    }
+                }
 
             } else {
                 printf("Client sent unknown command: %s\n", buffer);

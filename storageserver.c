@@ -10,6 +10,7 @@
 #include <time.h>      // For strftime()
 #include <stdarg.h>    // For va_list
 #include <dirent.h>    // For opendir(), readdir()
+#include <errno.h>     // For errno, EEXIST, ENOTDIR
 #include "common.h" 
 // --- Define This Storage Server's Details ---
 #define SS_NM_PORT 9001       // Port for NM to connect to
@@ -31,8 +32,113 @@ int num_files = 2;
 void* handle_nm_command(void* arg);
 void* start_client_server(void* arg);
 void* start_nm_server(void* arg);
-    
 
+/*
+ * Helper function to create directories recursively (like mkdir -p)
+ * Returns 0 on success, -1 on failure
+ */
+int mkdir_recursive(const char* path, mode_t mode) {
+    char tmp[1024];
+    char* p = NULL;
+    size_t len;
+    struct stat st;
+    
+    snprintf(tmp, sizeof(tmp), "%s", path);
+    len = strlen(tmp);
+    
+    // Remove trailing slash if present
+    if (tmp[len - 1] == '/') {
+        tmp[len - 1] = 0;
+    }
+    
+    // Iterate through the path and create each directory
+    for (p = tmp + 1; *p; p++) {
+        if (*p == '/') {
+            *p = 0; // Temporarily truncate
+            
+            // Check if directory exists
+            if (stat(tmp, &st) != 0) {
+                // Directory doesn't exist, create it
+                if (mkdir(tmp, mode) != 0 && errno != EEXIST) {
+                    return -1;
+                }
+            } else if (!S_ISDIR(st.st_mode)) {
+                // Path exists but is not a directory
+                errno = ENOTDIR;
+                return -1;
+            }
+            
+            *p = '/'; // Restore the slash
+        }
+    }
+    
+    // Create the final directory
+    if (stat(tmp, &st) != 0) {
+        if (mkdir(tmp, mode) != 0 && errno != EEXIST) {
+            return -1;
+        }
+    } else if (!S_ISDIR(st.st_mode)) {
+        errno = ENOTDIR;
+        return -1;
+    }
+    
+    return 0;
+}
+
+/*
+ * Helper function to copy a file
+ * Returns 0 on success, -1 on failure
+ */
+int copy_file(const char* src_path, const char* dest_path) {
+    FILE* src = fopen(src_path, "rb");
+    if (!src) {
+        return -1;
+    }
+    
+    FILE* dest = fopen(dest_path, "wb");
+    if (!dest) {
+        fclose(src);
+        return -1;
+    }
+    
+    char buffer[4096];
+    size_t bytes;
+    while ((bytes = fread(buffer, 1, sizeof(buffer), src)) > 0) {
+        if (fwrite(buffer, 1, bytes, dest) != bytes) {
+            fclose(src);
+            fclose(dest);
+            return -1;
+        }
+    }
+    
+    fclose(src);
+    fclose(dest);
+    return 0;
+}
+
+/*
+ * Helper function to construct checkpoint file path
+ * Format: ss_storage/<filename>.checkpoint.<tag>
+ */
+void get_checkpoint_path(const char* filename, const char* tag, char* checkpoint_path, size_t size) {
+    // Extract directory path and base filename
+    const char* last_slash = strrchr(filename, '/');
+    if (last_slash) {
+        // File is in a subdirectory
+        size_t dir_len = last_slash - filename + 1;
+        char dir_path[1024];
+        snprintf(dir_path, sizeof(dir_path), "%s%.*s", SS_STORAGE_DIR, (int)dir_len, filename);
+        const char* base_filename = last_slash + 1;
+        snprintf(checkpoint_path, size, "%s.checkpoint.%s", dir_path, base_filename);
+        // Now append the tag
+        char temp[2048];
+        snprintf(temp, sizeof(temp), "%s%s", checkpoint_path, tag);
+        snprintf(checkpoint_path, size, "%s", temp);
+    } else {
+        // File is in root storage directory
+        snprintf(checkpoint_path, size, "%s%s.checkpoint.%s", SS_STORAGE_DIR, filename, tag);
+    }
+}
 
 /*
  * Thread function to handle a direct connection from a Client
@@ -428,14 +534,14 @@ void* handle_nm_command(void* arg) {
         char folder_path[512];
         snprintf(folder_path, sizeof(folder_path), "%s%s", SS_STORAGE_DIR, filename);
         
-        // Create directory
-        if (mkdir(folder_path, 0755) == 0) {
+        // Create directory recursively to support nested subfolders
+        if (mkdir_recursive(folder_path, 0755) == 0) {
             printf("SS (NM-Handler): Folder '%s' created successfully.\n", filename);
             log_to_file(nm_addr_str, "NameServer", "RES: CREATE_FOLDER for '%s' success.", filename);
             write(nm_socket, "ACK_FOLDER_SUCCESS\n", sizeof("ACK_FOLDER_SUCCESS\n") - 1);
         } else {
-            perror("SS (NM-Handler): mkdir failed");
-            log_to_file(nm_addr_str, "NameServer", "RES: CREATE_FOLDER for '%s' failed: mkdir failed.", filename);
+            perror("SS (NM-Handler): mkdir_recursive failed");
+            log_to_file(nm_addr_str, "NameServer", "RES: CREATE_FOLDER for '%s' failed: mkdir_recursive failed.", filename);
             write(nm_socket, "ACK_FOLDER_FAIL\n", sizeof("ACK_FOLDER_FAIL\n") - 1);
         }
     } else if (strcmp(command, "MOVE_FILE") == 0) {
@@ -449,11 +555,46 @@ void* handle_nm_command(void* arg) {
             printf("SS (NM-Handler): NM requested to move '%s' to '%s'\n", filename, folder_path);
             log_to_file(nm_addr_str, "NameServer", "REQ: MOVE_FILE '%s' to '%s'", filename, folder_path);
             
-            char old_path[1024], new_path[1024];
-            snprintf(old_path, sizeof(old_path), "%s%s", SS_STORAGE_DIR, filename);
-            snprintf(new_path, sizeof(new_path), "%s%s/%s", SS_STORAGE_DIR, folder_path, filename);
+            char old_path[2048], new_path[2048], dest_folder[2048];
+            int ret;
+            int move_failed = 0;
             
-            if (rename(old_path, new_path) == 0) {
+            ret = snprintf(old_path, sizeof(old_path), "%s%s", SS_STORAGE_DIR, filename);
+            if (ret >= sizeof(old_path)) {
+                fprintf(stderr, "SS (NM-Handler): old_path truncated\n");
+                move_failed = 1;
+            }
+            
+            if (!move_failed) {
+                ret = snprintf(dest_folder, sizeof(dest_folder), "%s%s", SS_STORAGE_DIR, folder_path);
+                if (ret >= sizeof(dest_folder)) {
+                    fprintf(stderr, "SS (NM-Handler): dest_folder truncated\n");
+                    move_failed = 1;
+                }
+            }
+            
+            if (!move_failed) {
+                // Extract just the filename from the full path
+                const char *base_filename = strrchr(filename, '/');
+                if (base_filename) {
+                    base_filename++; // Skip the '/'
+                } else {
+                    base_filename = filename;
+                }
+                ret = snprintf(new_path, sizeof(new_path), "%s/%s", dest_folder, base_filename);
+                if (ret >= sizeof(new_path)) {
+                    fprintf(stderr, "SS (NM-Handler): new_path truncated\n");
+                    move_failed = 1;
+                }
+            }
+            
+            if (move_failed) {
+                write(nm_socket, "ACK_MOVE_FAIL\n", sizeof("ACK_MOVE_FAIL\n") - 1);
+            } else if (mkdir_recursive(dest_folder, 0755) != 0) {
+                perror("SS (NM-Handler): mkdir_recursive failed for destination folder");
+                log_to_file(nm_addr_str, "NameServer", "RES: MOVE_FILE '%s' failed: Could not create destination folder '%s'.", filename, folder_path);
+                write(nm_socket, "ACK_MOVE_FAIL\n", sizeof("ACK_MOVE_FAIL\n") - 1);
+            } else if (rename(old_path, new_path) == 0) {
                 printf("SS (NM-Handler): File '%s' moved successfully to '%s'\n", filename, folder_path);
                 log_to_file(nm_addr_str, "NameServer", "RES: MOVE_FILE '%s' to '%s' success.", filename, folder_path);
                 write(nm_socket, "ACK_MOVE_SUCCESS\n", sizeof("ACK_MOVE_SUCCESS\n") - 1);
@@ -498,6 +639,152 @@ void* handle_nm_command(void* arg) {
             printf("  Sending folder listing.\n");
             log_to_file(nm_addr_str, "NameServer", "RES: VIEW_FOLDER for '%s' success.", filename);
             write(nm_socket, response_buf, strlen(response_buf));
+        }
+    } else if (strcmp(command, "CHECKPOINT") == 0) {
+        // Format: "CHECKPOINT <filename> <checkpoint_tag>"
+        char checkpoint_tag[128];
+        if (sscanf(buffer, "%s %s %s", command, filename, checkpoint_tag) != 3) {
+            printf("SS (NM-Handler): Invalid CHECKPOINT format\n");
+            log_to_file(nm_addr_str, "NameServer", "ERROR: Invalid CHECKPOINT format");
+            write(nm_socket, "ACK_CHECKPOINT_FAIL\n", sizeof("ACK_CHECKPOINT_FAIL\n") - 1);
+        } else {
+            printf("SS (NM-Handler): NM requested to create checkpoint '%s' for '%s'\n", checkpoint_tag, filename);
+            log_to_file(nm_addr_str, "NameServer", "REQ: CHECKPOINT for '%s' with tag '%s'", filename, checkpoint_tag);
+            
+            char file_path[1024], checkpoint_path[2048];
+            snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
+            get_checkpoint_path(filename, checkpoint_tag, checkpoint_path, sizeof(checkpoint_path));
+            
+            // Check if source file exists
+            struct stat st;
+            if (stat(file_path, &st) != 0) {
+                printf("SS (NM-Handler): File '%s' does not exist\n", filename);
+                log_to_file(nm_addr_str, "NameServer", "RES: CHECKPOINT failed: File '%s' does not exist.", filename);
+                write(nm_socket, "ACK_CHECKPOINT_FAIL\n", sizeof("ACK_CHECKPOINT_FAIL\n") - 1);
+            } else if (copy_file(file_path, checkpoint_path) == 0) {
+                printf("SS (NM-Handler): Checkpoint '%s' created successfully for '%s'\n", checkpoint_tag, filename);
+                log_to_file(nm_addr_str, "NameServer", "RES: CHECKPOINT '%s' for '%s' success.", checkpoint_tag, filename);
+                write(nm_socket, "ACK_CHECKPOINT_SUCCESS\n", sizeof("ACK_CHECKPOINT_SUCCESS\n") - 1);
+            } else {
+                perror("SS (NM-Handler): copy_file failed");
+                log_to_file(nm_addr_str, "NameServer", "RES: CHECKPOINT failed: copy_file failed for '%s'.", filename);
+                write(nm_socket, "ACK_CHECKPOINT_FAIL\n", sizeof("ACK_CHECKPOINT_FAIL\n") - 1);
+            }
+        }
+    } else if (strcmp(command, "LISTCHECKPOINTS") == 0) {
+        // Format: "LISTCHECKPOINTS <filename>"
+        printf("SS (NM-Handler): NM requested to list checkpoints for '%s'\n", filename);
+        log_to_file(nm_addr_str, "NameServer", "REQ: LISTCHECKPOINTS for '%s'", filename);
+        
+        // Construct search pattern for checkpoint files
+        char search_pattern[1024];
+        const char* last_slash = strrchr(filename, '/');
+        const char* base_filename = last_slash ? (last_slash + 1) : filename;
+        char dir_path[1024];
+        
+        if (last_slash) {
+            size_t dir_len = last_slash - filename + 1;
+            snprintf(dir_path, sizeof(dir_path), "%s%.*s", SS_STORAGE_DIR, (int)dir_len, filename);
+        } else {
+            snprintf(dir_path, sizeof(dir_path), "%s", SS_STORAGE_DIR);
+        }
+        
+        snprintf(search_pattern, sizeof(search_pattern), "%s.checkpoint.", base_filename);
+        
+        DIR* dir = opendir(dir_path);
+        if (!dir) {
+            perror("SS (NM-Handler): opendir failed");
+            log_to_file(nm_addr_str, "NameServer", "RES: LISTCHECKPOINTS failed: Could not open directory.");
+            write(nm_socket, "ACK_LISTCHECKPOINTS_FAIL\n", sizeof("ACK_LISTCHECKPOINTS_FAIL\n") - 1);
+        } else {
+            char response_buf[BUFFER_SIZE];
+            int offset = snprintf(response_buf, BUFFER_SIZE, "Checkpoints for %s:\n", filename);
+            
+            struct dirent* entry;
+            int checkpoint_count = 0;
+            while ((entry = readdir(dir)) != NULL) {
+                if (strncmp(entry->d_name, search_pattern, strlen(search_pattern)) == 0) {
+                    // Extract checkpoint tag from filename
+                    const char* tag = entry->d_name + strlen(search_pattern);
+                    offset += snprintf(response_buf + offset, BUFFER_SIZE - offset, "  - %s\n", tag);
+                    checkpoint_count++;
+                    if (offset >= BUFFER_SIZE - 100) break;
+                }
+            }
+            closedir(dir);
+            
+            if (checkpoint_count == 0) {
+                snprintf(response_buf + offset, BUFFER_SIZE - offset, "(no checkpoints)\n");
+            }
+            
+            printf("  Sending checkpoint list (%d checkpoints).\n", checkpoint_count);
+            log_to_file(nm_addr_str, "NameServer", "RES: LISTCHECKPOINTS for '%s' success (%d checkpoints).", filename, checkpoint_count);
+            write(nm_socket, response_buf, strlen(response_buf));
+        }
+    } else if (strcmp(command, "VIEWCHECKPOINT") == 0) {
+        // Format: "VIEWCHECKPOINT <filename> <checkpoint_tag>"
+        char checkpoint_tag[128];
+        if (sscanf(buffer, "%s %s %s", command, filename, checkpoint_tag) != 3) {
+            printf("SS (NM-Handler): Invalid VIEWCHECKPOINT format\n");
+            log_to_file(nm_addr_str, "NameServer", "ERROR: Invalid VIEWCHECKPOINT format");
+            write(nm_socket, "ACK_VIEWCHECKPOINT_FAIL\n", sizeof("ACK_VIEWCHECKPOINT_FAIL\n") - 1);
+        } else {
+            printf("SS (NM-Handler): NM requested to view checkpoint '%s' for '%s'\n", checkpoint_tag, filename);
+            log_to_file(nm_addr_str, "NameServer", "REQ: VIEWCHECKPOINT for '%s' with tag '%s'", filename, checkpoint_tag);
+            
+            char checkpoint_path[2048];
+            get_checkpoint_path(filename, checkpoint_tag, checkpoint_path, sizeof(checkpoint_path));
+            
+            FILE* f = fopen(checkpoint_path, "r");
+            if (!f) {
+                perror("SS (NM-Handler): fopen failed for checkpoint");
+                log_to_file(nm_addr_str, "NameServer", "RES: VIEWCHECKPOINT failed: Checkpoint '%s' does not exist.", checkpoint_tag);
+                write(nm_socket, "ACK_VIEWCHECKPOINT_FAIL\n", sizeof("ACK_VIEWCHECKPOINT_FAIL\n") - 1);
+            } else {
+                char response_buf[BUFFER_SIZE];
+                int offset = snprintf(response_buf, BUFFER_SIZE, "Checkpoint '%s' content:\n---\n", checkpoint_tag);
+                
+                size_t bytes_read = fread(response_buf + offset, 1, BUFFER_SIZE - offset - 10, f);
+                offset += bytes_read;
+                snprintf(response_buf + offset, BUFFER_SIZE - offset, "\n---\n");
+                
+                fclose(f);
+                
+                printf("  Sending checkpoint content (%zu bytes).\n", bytes_read);
+                log_to_file(nm_addr_str, "NameServer", "RES: VIEWCHECKPOINT for '%s' tag '%s' success.", filename, checkpoint_tag);
+                write(nm_socket, response_buf, strlen(response_buf));
+            }
+        }
+    } else if (strcmp(command, "REVERT") == 0) {
+        // Format: "REVERT <filename> <checkpoint_tag>"
+        char checkpoint_tag[128];
+        if (sscanf(buffer, "%s %s %s", command, filename, checkpoint_tag) != 3) {
+            printf("SS (NM-Handler): Invalid REVERT format\n");
+            log_to_file(nm_addr_str, "NameServer", "ERROR: Invalid REVERT format");
+            write(nm_socket, "ACK_REVERT_FAIL\n", sizeof("ACK_REVERT_FAIL\n") - 1);
+        } else {
+            printf("SS (NM-Handler): NM requested to revert '%s' to checkpoint '%s'\n", filename, checkpoint_tag);
+            log_to_file(nm_addr_str, "NameServer", "REQ: REVERT '%s' to checkpoint '%s'", filename, checkpoint_tag);
+            
+            char file_path[1024], checkpoint_path[2048];
+            snprintf(file_path, sizeof(file_path), "%s%s", SS_STORAGE_DIR, filename);
+            get_checkpoint_path(filename, checkpoint_tag, checkpoint_path, sizeof(checkpoint_path));
+            
+            // Check if checkpoint exists
+            struct stat st;
+            if (stat(checkpoint_path, &st) != 0) {
+                printf("SS (NM-Handler): Checkpoint '%s' does not exist\n", checkpoint_tag);
+                log_to_file(nm_addr_str, "NameServer", "RES: REVERT failed: Checkpoint '%s' does not exist.", checkpoint_tag);
+                write(nm_socket, "ACK_REVERT_FAIL\n", sizeof("ACK_REVERT_FAIL\n") - 1);
+            } else if (copy_file(checkpoint_path, file_path) == 0) {
+                printf("SS (NM-Handler): File '%s' reverted to checkpoint '%s' successfully\n", filename, checkpoint_tag);
+                log_to_file(nm_addr_str, "NameServer", "RES: REVERT '%s' to '%s' success.", filename, checkpoint_tag);
+                write(nm_socket, "ACK_REVERT_SUCCESS\n", sizeof("ACK_REVERT_SUCCESS\n") - 1);
+            } else {
+                perror("SS (NM-Handler): copy_file failed during revert");
+                log_to_file(nm_addr_str, "NameServer", "RES: REVERT failed: copy_file failed for '%s'.", filename);
+                write(nm_socket, "ACK_REVERT_FAIL\n", sizeof("ACK_REVERT_FAIL\n") - 1);
+            }
         }
     } else {
         printf("SS (NM-Handler): Unknown command from NM '%s'\n", command);

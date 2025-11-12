@@ -222,3 +222,163 @@
 [2025-11-11 01:19:26] [Client: 127.0.0.1:47698] [User: u] RES: READ for '5.txt' success. Sending SS_LOCATION 127.0.0.1 9002 5.txt
 [2025-11-11 01:19:44] [Client: 127.0.0.1:47698] [User: u] INFO: Client disconnected. Removing from list.
 [2025-11-11 01:19:44] [Client: 127.0.0.1:47698] [User: u] INFO: Connection closed.
+[2025-11-12 21:02:47] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 7 files from registry.
+[2025-11-12 21:02:47] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-12 21:02:49] [Client: 127.0.0.1:51242] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-12 21:02:49] [Client: 127.0.0.1:51242] [User: StorageServer] INFO: Registered SS (NM Port 9001, Client Port 9002)
+[2025-11-12 21:02:49] [Client: 127.0.0.1:51242] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-12 21:02:49] [Client: 127.0.0.1:51242] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-12 21:02:49] [Client: 127.0.0.1:51242] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-12 21:02:58] [Client: 127.0.0.1:50924] [User: anushka] REQ: REGISTER_CLIENT
+[2025-11-12 21:02:58] [Client: 127.0.0.1:50924] [User: anushka] RES: Client registration successful.
+[2025-11-12 21:03:30] [Client: 127.0.0.1:50924] [User: anushka] REQ: CREATEFOLDER 'hi'
+[2025-11-12 21:03:30] [Client: 127.0.0.1:50924] [User: anushka] RES: CREATEFOLDER 'hi' success.
+[2025-11-12 21:04:13] [Client: 127.0.0.1:50924] [User: anushka] REQ: CREATEFOLDER 'hi2'
+[2025-11-12 21:04:13] [Client: 127.0.0.1:50924] [User: anushka] RES: CREATEFOLDER 'hi2' success.
+[2025-11-12 21:04:26] [Client: 127.0.0.1:50924] [User: anushka] REQ: MOVE 'hi2' to 'hi'
+[2025-11-12 21:04:26] [Client: 127.0.0.1:50924] [User: anushka] RES: MOVE 'hi2' failed: File not found.
+[2025-11-12 21:14:06] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 7 files from registry.
+[2025-11-12 21:14:06] [Client: Internal] [User: NameServer] CRITICAL: bind() failed: Address already in use
+[2025-11-12 21:14:08] [Client: 127.0.0.1:52122] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-12 21:14:08] [Client: 127.0.0.1:52122] [User: StorageServer] INFO: Registered SS (NM Port 9001, Client Port 9002)
+[2025-11-12 21:14:08] [Client: 127.0.0.1:52122] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-12 21:14:08] [Client: 127.0.0.1:52122] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-12 21:14:08] [Client: 127.0.0.1:52122] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-12 21:14:16] [Client: 127.0.0.1:57026] [User: anu] REQ: REGISTER_CLIENT
+[2025-11-12 21:14:16] [Client: 127.0.0.1:57026] [User: anu] RES: Client registration successful.
+[2025-11-12 21:14:32] [Client: 127.0.0.1:57026] [User: anu] REQ: CREATEFOLDER 'u'
+[2025-11-12 21:14:32] [Client: 127.0.0.1:57026] [User: anu] RES: CREATEFOLDER 'u' success.
+[2025-11-12 21:14:46] [Client: 127.0.0.1:57026] [User: anu] REQ: CREATEFOLDER 'u/uu'
+[2025-11-12 21:14:46] [Client: 127.0.0.1:57026] [User: anu] RES: CREATEFOLDER 'u/uu' success.
+[2025-11-12 21:15:37] [Client: 127.0.0.1:57026] [User: anu] REQ: CREATE for 'u/itsu.txt'
+[2025-11-12 21:15:37] [Client: Internal] [User: NameServer] INFO: (Persistence) System state saved to disk (8 files).
+[2025-11-12 21:15:37] [Client: 127.0.0.1:57026] [User: anu] RES: CREATE for 'u/itsu.txt' success.
+[2025-11-12 21:16:05] [Client: 127.0.0.1:57026] [User: anu] REQ: READ for 'itsu.txt'
+[2025-11-12 21:16:05] [Client: Internal] [User: NameServer] CACHE: MISS for 'itsu.txt'
+[2025-11-12 21:16:05] [Client: 127.0.0.1:57026] [User: anu] RES: READ for 'itsu.txt' failed: File not found.
+[2025-11-12 21:16:15] [Client: 127.0.0.1:57026] [User: anu] REQ: READ for 'u/itsu.txt'
+[2025-11-12 21:16:15] [Client: Internal] [User: NameServer] CACHE: MISS for 'u/itsu.txt'
+[2025-11-12 21:16:15] [Client: Internal] [User: NameServer] CACHE: ADD for 'u/itsu.txt'
+[2025-11-12 21:16:15] [Client: 127.0.0.1:57026] [User: anu] RES: READ for 'u/itsu.txt' success. Sending SS_LOCATION 127.0.0.1 9002 u/itsu.txt
+[2025-11-12 21:16:27] [Client: 127.0.0.1:57026] [User: anu] INFO: Client disconnected. Removing from list.
+[2025-11-12 21:16:27] [Client: 127.0.0.1:57026] [User: anu] INFO: Connection closed.
+[2025-11-12 21:49:06] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 8 files from registry.
+[2025-11-12 21:49:06] [Client: Internal] [User: NameServer] CRITICAL: bind() failed: Address already in use
+[2025-11-12 21:49:08] [Client: 127.0.0.1:56028] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-12 21:49:08] [Client: 127.0.0.1:56028] [User: StorageServer] INFO: Registered SS (NM Port 9001, Client Port 9002)
+[2025-11-12 21:49:08] [Client: 127.0.0.1:56028] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-12 21:49:08] [Client: 127.0.0.1:56028] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-12 21:49:08] [Client: 127.0.0.1:56028] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-12 21:49:36] [Client: 127.0.0.1:48642] [User: anu] REQ: REGISTER_CLIENT
+[2025-11-12 21:49:36] [Client: 127.0.0.1:48642] [User: anu] RES: Client registration successful.
+[2025-11-12 21:52:08] [Client: 127.0.0.1:48642] [User: anu] REQ: LIST
+[2025-11-12 21:52:08] [Client: 127.0.0.1:48642] [User: anu] RES: LIST success.
+[2025-11-12 21:52:13] [Client: 127.0.0.1:48642] [User: anu] REQ: VIEW
+[2025-11-12 21:52:13] [Client: 127.0.0.1:48642] [User: anu] RES: VIEW success. Sent 8 files.
+[2025-11-12 21:54:09] [Client: 127.0.0.1:48642] [User: anu] REQ: CREATE for '5.txt'
+[2025-11-12 21:54:09] [Client: 127.0.0.1:48642] [User: anu] RES: CREATE for '5.txt' failed: File already exists.
+[2025-11-12 21:54:15] [Client: 127.0.0.1:48642] [User: anu] REQ: CREATE for '7.txt'
+[2025-11-12 21:54:15] [Client: Internal] [User: NameServer] INFO: (Persistence) System state saved to disk (9 files).
+[2025-11-12 21:54:15] [Client: 127.0.0.1:48642] [User: anu] RES: CREATE for '7.txt' success.
+[2025-11-12 21:54:27] [Client: 127.0.0.1:48642] [User: anu] WARN: Unknown command: CHECKPOINT 7.txt init
+[2025-11-12 21:56:16] [Client: 127.0.0.1:48642] [User: anu] WARN: Unknown command: CHECKPOINT 7.txt 1
+[2025-11-12 21:57:05] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 9 files from registry.
+[2025-11-12 21:57:05] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-12 21:57:08] [Client: 127.0.0.1:48868] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-12 21:57:08] [Client: 127.0.0.1:48868] [User: StorageServer] INFO: Registered SS (NM Port 9001, Client Port 9002)
+[2025-11-12 21:57:08] [Client: 127.0.0.1:48868] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-12 21:57:08] [Client: 127.0.0.1:48868] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-12 21:57:08] [Client: 127.0.0.1:48868] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-12 21:57:12] [Client: 127.0.0.1:58072] [User: anu] REQ: REGISTER_CLIENT
+[2025-11-12 21:57:12] [Client: 127.0.0.1:58072] [User: anu] RES: Client registration successful.
+[2025-11-12 21:57:15] [Client: 127.0.0.1:58072] [User: anu] REQ: CREATE for '8.txt'
+[2025-11-12 21:57:15] [Client: Internal] [User: NameServer] INFO: (Persistence) System state saved to disk (10 files).
+[2025-11-12 21:57:15] [Client: 127.0.0.1:58072] [User: anu] RES: CREATE for '8.txt' success.
+[2025-11-12 21:57:25] [Client: 127.0.0.1:58072] [User: anu] WARN: Unknown command: CHECKPOINT 8.txt init
+[2025-11-12 22:04:46] [Client: 127.0.0.1:58072] [User: anu] INFO: Client disconnected. Removing from list.
+[2025-11-12 22:04:46] [Client: 127.0.0.1:58072] [User: anu] INFO: Connection closed.
+[2025-11-12 22:04:56] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 10 files from registry.
+[2025-11-12 22:04:56] [Client: Internal] [User: NameServer] CRITICAL: bind() failed: Address already in use
+[2025-11-12 22:04:58] [Client: 127.0.0.1:38178] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-12 22:04:58] [Client: 127.0.0.1:38178] [User: StorageServer] INFO: Registered SS (NM Port 9001, Client Port 9002)
+[2025-11-12 22:04:58] [Client: 127.0.0.1:38178] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-12 22:04:58] [Client: 127.0.0.1:38178] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-12 22:04:58] [Client: 127.0.0.1:38178] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-12 22:07:20] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 10 files from registry.
+[2025-11-12 22:07:20] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-12 22:07:22] [Client: 127.0.0.1:48686] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-12 22:07:22] [Client: 127.0.0.1:48686] [User: StorageServer] INFO: Registered SS (NM Port 9001, Client Port 9002)
+[2025-11-12 22:07:22] [Client: 127.0.0.1:48686] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-12 22:07:22] [Client: 127.0.0.1:48686] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-12 22:07:22] [Client: 127.0.0.1:48686] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-12 22:07:52] [Client: 127.0.0.1:48272] [User: anu] REQ: REGISTER_CLIENT
+[2025-11-12 22:07:52] [Client: 127.0.0.1:48272] [User: anu] RES: Client registration successful.
+[2025-11-12 22:08:07] [Client: 127.0.0.1:48272] [User: anu] REQ: CREATE for '9.txt'
+[2025-11-12 22:08:07] [Client: Internal] [User: NameServer] INFO: (Persistence) System state saved to disk (11 files).
+[2025-11-12 22:08:07] [Client: 127.0.0.1:48272] [User: anu] RES: CREATE for '9.txt' success.
+[2025-11-12 22:09:18] [Client: 127.0.0.1:48272] [User: anu] REQ: CHECKPOINT for '9.txt' with tag 'v1'
+[2025-11-12 22:09:18] [Client: Internal] [User: NameServer] CACHE: MISS for '9.txt'
+[2025-11-12 22:09:18] [Client: Internal] [User: NameServer] CACHE: ADD for '9.txt'
+[2025-11-12 22:09:18] [Client: 127.0.0.1:48272] [User: anu] RES: CHECKPOINT for '9.txt' tag 'v1' success.
+[2025-11-12 22:12:21] [Client: 127.0.0.1:48272] [User: anu] REQ: WRITE for '9.txt', sentence 0.
+[2025-11-12 22:12:21] [Client: Internal] [User: NameServer] CACHE: HIT for '9.txt'
+[2025-11-12 22:12:21] [Client: 127.0.0.1:48272] [User: anu] INFO: Lock granted for '9.txt' (sent 0).
+[2025-11-12 22:12:21] [Client: 127.0.0.1:48272] [User: anu] RES: WRITE for '9.txt' success. Sending SS_LOCATION 127.0.0.1 9002 9.txt
+[2025-11-12 22:12:29] [Client: 127.0.0.1:48272] [User: anu] REQ: RELEASE_LOCK for '9.txt' (sent 0).
+[2025-11-12 22:12:29] [Client: 127.0.0.1:48272] [User: anu] RES: Lock released for '9.txt' (sent 0).
+[2025-11-12 22:13:58] [Client: 127.0.0.1:48272] [User: anu] REQ: LIST
+[2025-11-12 22:13:58] [Client: 127.0.0.1:48272] [User: anu] RES: LIST success.
+[2025-11-12 22:15:54] [Client: 127.0.0.1:48272] [User: anu] REQ: VIEW
+[2025-11-12 22:15:54] [Client: 127.0.0.1:48272] [User: anu] RES: VIEW success. Sent 8 files.
+[2025-11-12 22:21:32] [Client: 127.0.0.1:48272] [User: anu] INFO: Client disconnected. Removing from list.
+[2025-11-12 22:21:32] [Client: 127.0.0.1:48272] [User: anu] INFO: Connection closed.
+[2025-11-12 22:23:32] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 11 files from registry.
+[2025-11-12 22:23:32] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-12 22:23:34] [Client: 127.0.0.1:39212] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-12 22:23:34] [Client: 127.0.0.1:39212] [User: StorageServer] INFO: Registered SS (NM Port 9001, Client Port 9002)
+[2025-11-12 22:23:34] [Client: 127.0.0.1:39212] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-12 22:23:34] [Client: 127.0.0.1:39212] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-12 22:23:34] [Client: 127.0.0.1:39212] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-12 22:23:43] [Client: 127.0.0.1:39066] [User: Anu] REQ: REGISTER_CLIENT
+[2025-11-12 22:23:43] [Client: 127.0.0.1:39066] [User: Anu] RES: Client registration successful.
+[2025-11-12 22:25:21] [Client: 127.0.0.1:39066] [User: Anu] REQ: CREATE for '9.txt'
+[2025-11-12 22:25:21] [Client: 127.0.0.1:39066] [User: Anu] RES: CREATE for '9.txt' failed: File already exists.
+[2025-11-12 22:26:14] [Client: 127.0.0.1:39066] [User: Anu] REQ: CREATE for '10.txt'
+[2025-11-12 22:26:14] [Client: Internal] [User: NameServer] INFO: (Persistence) System state saved to disk (12 files).
+[2025-11-12 22:26:14] [Client: 127.0.0.1:39066] [User: Anu] RES: CREATE for '10.txt' success.
+[2025-11-12 22:26:24] [Client: 127.0.0.1:39066] [User: Anu] REQ: CHECKPOINT for '10.txt' with tag 'v1'
+[2025-11-12 22:26:24] [Client: Internal] [User: NameServer] CACHE: MISS for '10.txt'
+[2025-11-12 22:26:24] [Client: Internal] [User: NameServer] CACHE: ADD for '10.txt'
+[2025-11-12 22:26:24] [Client: 127.0.0.1:39066] [User: Anu] RES: CHECKPOINT for '10.txt' tag 'v1' success.
+[2025-11-12 22:27:54] [Client: 127.0.0.1:39066] [User: Anu] REQ: VIEWCHECKPOINT for '10.txt' tag 'v1'
+[2025-11-12 22:27:54] [Client: Internal] [User: NameServer] CACHE: HIT for '10.txt'
+[2025-11-12 22:27:54] [Client: 127.0.0.1:39066] [User: Anu] RES: VIEWCHECKPOINT for '10.txt' tag 'v1' success.
+[2025-11-12 22:28:08] [Client: 127.0.0.1:39066] [User: Anu] REQ: LIST
+[2025-11-12 22:28:08] [Client: 127.0.0.1:39066] [User: Anu] RES: LIST success.
+[2025-11-12 22:28:17] [Client: 127.0.0.1:39066] [User: Anu] REQ: LISTCHECKPOINTS for '10.txt'
+[2025-11-12 22:28:17] [Client: Internal] [User: NameServer] CACHE: HIT for '10.txt'
+[2025-11-12 22:28:17] [Client: 127.0.0.1:39066] [User: Anu] RES: LISTCHECKPOINTS for '10.txt' success.
+[2025-11-12 22:28:53] [Client: 127.0.0.1:39066] [User: Anu] REQ: WRITE for '10.txt', sentence 0.
+[2025-11-12 22:28:53] [Client: Internal] [User: NameServer] CACHE: HIT for '10.txt'
+[2025-11-12 22:28:53] [Client: 127.0.0.1:39066] [User: Anu] INFO: Lock granted for '10.txt' (sent 0).
+[2025-11-12 22:28:53] [Client: 127.0.0.1:39066] [User: Anu] RES: WRITE for '10.txt' success. Sending SS_LOCATION 127.0.0.1 9002 10.txt
+[2025-11-12 22:29:03] [Client: 127.0.0.1:39066] [User: Anu] REQ: RELEASE_LOCK for '10.txt' (sent 0).
+[2025-11-12 22:29:03] [Client: 127.0.0.1:39066] [User: Anu] RES: Lock released for '10.txt' (sent 0).
+[2025-11-12 22:29:14] [Client: 127.0.0.1:39066] [User: Anu] REQ: READ for '10.txt'
+[2025-11-12 22:29:14] [Client: Internal] [User: NameServer] CACHE: HIT for '10.txt'
+[2025-11-12 22:29:14] [Client: 127.0.0.1:39066] [User: Anu] RES: READ for '10.txt' success. Sending SS_LOCATION 127.0.0.1 9002 10.txt
+[2025-11-12 22:29:26] [Client: 127.0.0.1:39066] [User: Anu] REQ: CHECKPOINT for '10.txt' with tag 'v2'
+[2025-11-12 22:29:26] [Client: Internal] [User: NameServer] CACHE: HIT for '10.txt'
+[2025-11-12 22:29:26] [Client: 127.0.0.1:39066] [User: Anu] RES: CHECKPOINT for '10.txt' tag 'v2' success.
+[2025-11-12 22:29:34] [Client: 127.0.0.1:39066] [User: Anu] REQ: REVERT for '10.txt' to tag 'v1'
+[2025-11-12 22:29:34] [Client: Internal] [User: NameServer] CACHE: HIT for '10.txt'
+[2025-11-12 22:29:34] [Client: 127.0.0.1:39066] [User: Anu] RES: REVERT for '10.txt' to tag 'v1' success.
+[2025-11-12 22:29:38] [Client: 127.0.0.1:39066] [User: Anu] REQ: READ for '10.txt'
+[2025-11-12 22:29:38] [Client: Internal] [User: NameServer] CACHE: HIT for '10.txt'
+[2025-11-12 22:29:38] [Client: 127.0.0.1:39066] [User: Anu] RES: READ for '10.txt' success. Sending SS_LOCATION 127.0.0.1 9002 10.txt
+[2025-11-12 22:29:50] [Client: 127.0.0.1:39066] [User: Anu] REQ: REVERT for '10.txt' to tag 'v2'
+[2025-11-12 22:29:50] [Client: Internal] [User: NameServer] CACHE: HIT for '10.txt'
+[2025-11-12 22:29:50] [Client: 127.0.0.1:39066] [User: Anu] RES: REVERT for '10.txt' to tag 'v2' success.
+[2025-11-12 22:29:57] [Client: 127.0.0.1:39066] [User: Anu] REQ: READ for '10.txt'
+[2025-11-12 22:29:57] [Client: Internal] [User: NameServer] CACHE: HIT for '10.txt'
+[2025-11-12 22:29:57] [Client: 127.0.0.1:39066] [User: Anu] RES: READ for '10.txt' success. Sending SS_LOCATION 127.0.0.1 9002 10.txt
