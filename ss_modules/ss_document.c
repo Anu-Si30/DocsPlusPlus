@@ -10,18 +10,71 @@
  * Create a new word node
  */
 WordNode* create_word_node(const char* word) {
+    if (word == NULL) {
+        return NULL;
+    }
     WordNode* new_node = (WordNode*)malloc(sizeof(WordNode));
+    if (new_node == NULL) {
+        return NULL;
+    }
     new_node->word = strdup(word);
+    if (new_node->word == NULL) {
+        free(new_node);
+        return NULL;
+    }
     new_node->next_word = NULL;
     new_node->next_sentence = NULL;
     return new_node;
 }
 
 /*
+ * Split a string with consecutive delimiters into multiple sentence nodes
+ * E.g., "..." becomes three sentences, each ending with "."
+ */
+WordNode* create_delimiter_sentences(const char* delimiters) {
+    if (delimiters == NULL || delimiters[0] == '\0') return NULL;
+    
+    WordNode* first_sentence = NULL;
+    WordNode* prev_sentence = NULL;
+    
+    for (int i = 0; delimiters[i] != '\0'; i++) {
+        if (is_delimiter(delimiters[i])) {
+            char single_delim[2] = {delimiters[i], '\0'};
+            WordNode* new_sentence = create_word_node(single_delim);
+            
+            if (first_sentence == NULL) {
+                first_sentence = new_sentence;
+            } else {
+                prev_sentence->next_sentence = new_sentence;
+            }
+            prev_sentence = new_sentence;
+        }
+    }
+    
+    return first_sentence;
+}
+
+
+/*
  * Check if a character is a sentence delimiter
  */
 int is_delimiter(char c) {
     return (c == '.' || c == '!' || c == '?');
+}
+
+/*
+ * Check if a string contains only delimiter characters
+ */
+int is_all_delimiters(const char* str) {
+    if (str == NULL || str[0] == '\0') {
+        return 0;
+    }
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (!is_delimiter(str[i])) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 /*
@@ -76,6 +129,25 @@ WordNode* parse_file_to_list(FILE* file) {
                 }
                 current_word_node = new_node;
                 buffer_idx = 0; 
+            } else if (is_delimiter(c)) {
+                // Standalone delimiter (e.g., space followed by period)
+                char delim_str[2] = {c, '\0'};
+                WordNode* new_node = create_word_node(delim_str);
+                if (current_sentence_head == NULL) {
+                    current_sentence_head = new_node;
+                    if (doc_head == NULL) {
+                        doc_head = current_sentence_head;
+                    } else {
+                        WordNode* temp_sent = doc_head;
+                        while(temp_sent->next_sentence != NULL) {
+                            temp_sent = temp_sent->next_sentence;
+                        }
+                        temp_sent->next_sentence = current_sentence_head;
+                    }
+                } else {
+                    current_word_node->next_word = new_node;
+                }
+                current_word_node = new_node;
             }
             if (is_delimiter(c)) {
                 current_sentence_head = NULL;
@@ -108,15 +180,50 @@ void flatten_list_to_file(WordNode* doc_head, FILE* file) {
     while (current_sentence != NULL) {
         WordNode* current_word = current_sentence;
         while (current_word != NULL) {
-            fprintf(file, "%s", current_word->word);
+            // Write the word, stripping trailing delimiters from non-final words
+            char* word_to_write = current_word->word;
+            
+            // Safety check
+            if (word_to_write == NULL) {
+                current_word = current_word->next_word;
+                continue;
+            }
+            
+            // Write the word exactly as-is (preserve all delimiters, don't auto-add anything)
+            fprintf(file, "%s", word_to_write);
+            
             if (current_word->next_word != NULL) {
-                fprintf(file, " ");
+                // Check if next word is a standalone delimiter (single delimiter character)
+                // If so, don't add space before it
+                WordNode* next = current_word->next_word;
+                int is_standalone_delimiter = 0;
+                if (next->word != NULL && 
+                    strlen(next->word) == 1 && 
+                    is_delimiter(next->word[0])) {
+                    is_standalone_delimiter = 1;
+                }
+                
+                if (!is_standalone_delimiter) {
+                    fprintf(file, " ");
+                }
             }
             current_word = current_word->next_word;
         }
         current_sentence = current_sentence->next_sentence;
         if (current_sentence != NULL) {
-            fprintf(file, " ");
+            // Check if next sentence is a standalone delimiter (single character that is a delimiter)
+            // If so, don't add space before it
+            int is_standalone_delimiter = 0;
+            if (current_sentence->word != NULL && 
+                strlen(current_sentence->word) == 1 && 
+                is_delimiter(current_sentence->word[0]) &&
+                current_sentence->next_word == NULL) {
+                is_standalone_delimiter = 1;
+            }
+            
+            if (!is_standalone_delimiter) {
+                fprintf(file, " ");
+            }
         }
     }
 }
@@ -137,6 +244,65 @@ WordNode* get_sentence(WordNode* doc_head, int sentence_index) {
  */
 WordNode* insert_word_at(WordNode* doc_head, int sentence_index, int word_index, const char* content) {
     
+    // Special case: if content is all delimiters (e.g., "...", "?!."), split into multiple sentences
+    if (is_all_delimiters(content) && word_index == 0) {
+        printf("SS (Write): Detected delimiter-only content '%s', creating multiple sentences\n", content);
+        
+        // Create multiple sentences from the delimiters
+        WordNode* delimiter_sentences = create_delimiter_sentences(content);
+        if (delimiter_sentences == NULL) {
+            return NULL;
+        }
+        
+        // Find the last sentence created
+        WordNode* last_delim_sentence = delimiter_sentences;
+        while (last_delim_sentence->next_sentence != NULL) {
+            last_delim_sentence = last_delim_sentence->next_sentence;
+        }
+        
+        // Handle empty document
+        if (doc_head == NULL && sentence_index == 0) {
+            return delimiter_sentences;
+        }
+        
+        // Get the target sentence where we want to insert
+        WordNode* sentence_head = get_sentence(doc_head, sentence_index);
+        
+        if (sentence_head == NULL && sentence_index > 0) {
+            // Appending to end of document
+            WordNode* prev_sentence = get_sentence(doc_head, sentence_index - 1);
+            if (prev_sentence != NULL) {
+                prev_sentence->next_sentence = delimiter_sentences;
+                return doc_head;
+            } else {
+                printf("SS (Write): ERROR: Invalid sentence index %d (non-contiguous)\n", sentence_index);
+                // Clean up
+                free_document(delimiter_sentences);
+                return NULL;
+            }
+        }
+        
+        if (sentence_head == NULL) {
+            printf("SS (Write): ERROR: Invalid sentence index %d\n", sentence_index);
+            free_document(delimiter_sentences);
+            return NULL;
+        }
+        
+        // Insert the delimiter sentences at the target position
+        last_delim_sentence->next_sentence = sentence_head->next_sentence;
+        
+        if (sentence_index == 0) {
+            delimiter_sentences->next_word = sentence_head;
+            return delimiter_sentences;
+        } else {
+            WordNode* prev_sentence = get_sentence(doc_head, sentence_index - 1);
+            prev_sentence->next_sentence = delimiter_sentences;
+            delimiter_sentences->next_word = sentence_head;
+            return doc_head;
+        }
+    }
+    
+    // Regular word insertion (existing logic)
     if (doc_head == NULL && sentence_index == 0 && word_index == 0) {
         printf("SS (Write): Inserting into empty doc\n"); 
         WordNode* new_word_node = create_word_node(content);

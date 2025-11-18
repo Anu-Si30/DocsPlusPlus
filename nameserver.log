@@ -939,3 +939,419 @@
 [2025-11-18 01:31:56] [Client: 127.0.0.1:42622] [User: anu] RES: Client registration successful.
 [2025-11-18 01:32:00] [Client: 127.0.0.1:42622] [User: anu] INFO: Client disconnected. Removing from list.
 [2025-11-18 01:32:00] [Client: 127.0.0.1:42622] [User: anu] INFO: Connection closed.
+[2025-11-18 10:28:23] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 4 files from registry.
+[2025-11-18 10:28:23] [Client: Internal] [User: NameServer] INFO: Heartbeat monitoring thread started
+[2025-11-18 10:28:23] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] INFO: Registered SS0 (NM Port 9001, Client Port 9002)
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] INFO: Registered new non-persistent file: one.txt
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] INFO: Registered new non-persistent file: two.txt
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt.bak
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt.bak
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt.bak
+[2025-11-18 10:28:45] [Client: 127.0.0.1:45860] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-18 10:29:11] [Client: 127.0.0.1:54972] [User: Anushka] REQ: REGISTER_CLIENT
+[2025-11-18 10:29:11] [Client: 127.0.0.1:54972] [User: Anushka] RES: Client registration successful.
+[2025-11-18 10:29:18] [Client: 127.0.0.1:54972] [User: Anushka] REQ: CREATE for 'testing.txt'
+[2025-11-18 10:29:18] [Client: 127.0.0.1:54972] [User: Anushka] INFO: Assigning 'testing.txt' to SS0 (Round-robin)
+[2025-11-18 10:29:18] [Client: Internal] [User: NameServer] INFO: (Persistence) System state saved to disk (5 files).
+[2025-11-18 10:29:18] [Client: 127.0.0.1:54972] [User: Anushka] RES: CREATE for 'testing.txt' success.
+[2025-11-18 10:29:26] [Client: 127.0.0.1:54972] [User: Anushka] REQ: WRITE for 'testing.txt', sentence 0.
+[2025-11-18 10:29:26] [Client: Internal] [User: NameServer] CACHE: MISS for 'testing.txt'
+[2025-11-18 10:29:26] [Client: Internal] [User: NameServer] CACHE: ADD for 'testing.txt'
+[2025-11-18 10:29:26] [Client: 127.0.0.1:54972] [User: Anushka] INFO: Lock granted for 'testing.txt' (sent 0).
+[2025-11-18 10:29:26] [Client: 127.0.0.1:54972] [User: Anushka] RES: WRITE for 'testing.txt' success. Sending SS_LOCATION 127.0.0.1 9002 testing.txt
+[2025-11-18 10:29:51] [Client: 127.0.0.1:54972] [User: Anushka] REQ: RELEASE_LOCK for 'testing.txt' (sent 0).
+[2025-11-18 10:29:51] [Client: 127.0.0.1:54972] [User: Anushka] RES: Lock released for 'testing.txt' (sent 0).
+[2025-11-18 10:30:01] [Client: 127.0.0.1:54972] [User: Anushka] REQ: READ for 'testing.txt'
+[2025-11-18 10:30:01] [Client: Internal] [User: NameServer] CACHE: HIT for 'testing.txt'
+[2025-11-18 10:30:01] [Client: 127.0.0.1:54972] [User: Anushka] RES: READ for 'testing.txt' success. Sending SS_LOCATION 127.0.0.1 9002 testing.txt
+[2025-11-18 10:30:16] [Client: 127.0.0.1:54972] [User: Anushka] REQ: READ for 'testing.txt'
+[2025-11-18 10:30:16] [Client: Internal] [User: NameServer] CACHE: HIT for 'testing.txt'
+[2025-11-18 10:30:16] [Client: 127.0.0.1:54972] [User: Anushka] RES: READ for 'testing.txt' success. Sending SS_LOCATION 127.0.0.1 9002 testing.txt
+[2025-11-18 10:34:57] [Client: 127.0.0.1:54972] [User: Anushka] REQ: VIEW
+[2025-11-18 10:34:57] [Client: 127.0.0.1:54972] [User: Anushka] RES: VIEW success. Sent 5 files.
+[2025-11-18 10:42:00] [Client: 127.0.0.1:54972] [User: Anushka] REQ: WRITE for 'testing.txt', sentence 1.
+[2025-11-18 10:42:00] [Client: Internal] [User: NameServer] CACHE: HIT for 'testing.txt'
+[2025-11-18 10:42:00] [Client: 127.0.0.1:54972] [User: Anushka] INFO: Lock granted for 'testing.txt' (sent 1).
+[2025-11-18 10:42:00] [Client: 127.0.0.1:54972] [User: Anushka] RES: WRITE for 'testing.txt' success. Sending SS_LOCATION 127.0.0.1 9002 testing.txt
+[2025-11-18 10:49:33] [Client: Internal] [User: NameServer] WARNING: SS0 marked OFFLINE (no heartbeat for 198 seconds)
+[2025-11-18 10:49:43] [Client: 127.0.0.1:54972] [User: Anushka] INFO: Client disconnected. Removing from list.
+[2025-11-18 10:49:43] [Client: 127.0.0.1:54972] [User: Anushka] INFO: Auto-releasing lock on testing.txt (sent 1).
+[2025-11-18 10:49:43] [Client: 127.0.0.1:54972] [User: Anushka] INFO: Connection closed.
+[2025-11-18 10:50:14] [Client: 127.0.0.1:51568] [User: Anushka] REQ: REGISTER_CLIENT
+[2025-11-18 10:50:14] [Client: 127.0.0.1:51568] [User: Anushka] RES: Client registration successful.
+[2025-11-18 10:50:27] [Client: 127.0.0.1:51568] [User: Anushka] REQ: CREATE for 'close.txt'
+[2025-11-18 10:50:27] [Client: 127.0.0.1:51568] [User: Anushka] INFO: Assigning 'close.txt' to SS0 (Round-robin)
+[2025-11-18 10:50:27] [Client: Internal] [User: NameServer] INFO: (Persistence) System state saved to disk (6 files).
+[2025-11-18 10:50:27] [Client: 127.0.0.1:51568] [User: Anushka] RES: CREATE for 'close.txt' success.
+[2025-11-18 10:50:40] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 6 files from registry.
+[2025-11-18 10:50:40] [Client: Internal] [User: NameServer] INFO: Heartbeat monitoring thread started
+[2025-11-18 10:50:40] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registered SS0 (NM Port 9001, Client Port 9002)
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registered new non-persistent file: testing.txt.bak
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registered new non-persistent file: one.txt
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Re-linking existing file 'close.txt'.
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registered new non-persistent file: two.txt
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt.bak
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Re-linking existing file 'testing.txt'.
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt.bak
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt.bak
+[2025-11-18 10:50:54] [Client: 127.0.0.1:56916] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-18 10:51:11] [Client: 127.0.0.1:57442] [User: Anushka] REQ: REGISTER_CLIENT
+[2025-11-18 10:51:11] [Client: 127.0.0.1:57442] [User: Anushka] RES: Client registration successful.
+[2025-11-18 10:51:16] [Client: 127.0.0.1:57442] [User: Anushka] REQ: READ for 'close.txt'
+[2025-11-18 10:51:16] [Client: Internal] [User: NameServer] CACHE: MISS for 'close.txt'
+[2025-11-18 10:51:16] [Client: Internal] [User: NameServer] CACHE: ADD for 'close.txt'
+[2025-11-18 10:51:16] [Client: 127.0.0.1:57442] [User: Anushka] RES: READ for 'close.txt' success. Sending SS_LOCATION 127.0.0.1 9002 close.txt
+[2025-11-18 10:51:53] [Client: 127.0.0.1:57442] [User: Anushka] REQ: WRITE for 'close.txt', sentence 0.
+[2025-11-18 10:51:53] [Client: Internal] [User: NameServer] CACHE: HIT for 'close.txt'
+[2025-11-18 10:51:53] [Client: 127.0.0.1:57442] [User: Anushka] INFO: Lock granted for 'close.txt' (sent 0).
+[2025-11-18 10:51:53] [Client: 127.0.0.1:57442] [User: Anushka] RES: WRITE for 'close.txt' success. Sending SS_LOCATION 127.0.0.1 9002 close.txt
+[2025-11-18 10:53:15] [Client: 127.0.0.1:57442] [User: Anushka] REQ: RELEASE_LOCK for 'close.txt' (sent 0).
+[2025-11-18 10:53:15] [Client: 127.0.0.1:57442] [User: Anushka] RES: Lock released for 'close.txt' (sent 0).
+[2025-11-18 10:53:20] [Client: 127.0.0.1:57442] [User: Anushka] REQ: READ for 'close.txt'
+[2025-11-18 10:53:20] [Client: Internal] [User: NameServer] CACHE: HIT for 'close.txt'
+[2025-11-18 10:53:20] [Client: 127.0.0.1:57442] [User: Anushka] RES: READ for 'close.txt' success. Sending SS_LOCATION 127.0.0.1 9002 close.txt
+[2025-11-18 12:06:28] [Client: Internal] [User: NameServer] WARNING: SS0 marked OFFLINE (no heartbeat for 3074 seconds)
+[2025-11-18 12:14:04] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 6 files from registry.
+[2025-11-18 12:14:04] [Client: Internal] [User: NameServer] INFO: Heartbeat monitoring thread started
+[2025-11-18 12:14:04] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered SS0 (NM Port 9001, Client Port 9002)
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: testing.txt.bak
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: one.txt
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Re-linking existing file 'close.txt'.
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: close.txt.bak
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: two.txt
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: test.txt
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt.bak
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Re-linking existing file 'testing.txt'.
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt.bak
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt.bak
+[2025-11-18 12:14:09] [Client: 127.0.0.1:57284] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-18 12:14:18] [Client: 127.0.0.1:59234] [User: Anushka] REQ: REGISTER_CLIENT
+[2025-11-18 12:14:18] [Client: 127.0.0.1:59234] [User: Anushka] RES: Client registration successful.
+[2025-11-18 12:14:34] [Client: 127.0.0.1:59234] [User: Anushka] REQ: CREATE for 'newfile.txt'
+[2025-11-18 12:14:34] [Client: 127.0.0.1:59234] [User: Anushka] INFO: Assigning 'newfile.txt' to SS0 (Round-robin)
+[2025-11-18 12:14:34] [Client: Internal] [User: NameServer] INFO: (Persistence) System state saved to disk (7 files).
+[2025-11-18 12:14:34] [Client: 127.0.0.1:59234] [User: Anushka] RES: CREATE for 'newfile.txt' success.
+[2025-11-18 12:14:56] [Client: 127.0.0.1:59234] [User: Anushka] REQ: WRITE for 'newfile.txt', sentence 0.
+[2025-11-18 12:14:56] [Client: Internal] [User: NameServer] CACHE: MISS for 'newfile.txt'
+[2025-11-18 12:14:56] [Client: Internal] [User: NameServer] CACHE: ADD for 'newfile.txt'
+[2025-11-18 12:14:56] [Client: 127.0.0.1:59234] [User: Anushka] INFO: Lock granted for 'newfile.txt' (sent 0).
+[2025-11-18 12:14:56] [Client: 127.0.0.1:59234] [User: Anushka] RES: WRITE for 'newfile.txt' success. Sending SS_LOCATION 127.0.0.1 9002 newfile.txt
+[2025-11-18 12:15:19] [Client: 127.0.0.1:59234] [User: Anushka] REQ: RELEASE_LOCK for 'newfile.txt' (sent 0).
+[2025-11-18 12:15:19] [Client: 127.0.0.1:59234] [User: Anushka] RES: Lock released for 'newfile.txt' (sent 0).
+[2025-11-18 12:16:04] [Client: 127.0.0.1:59234] [User: Anushka] REQ: READ for 'newfile.txt'
+[2025-11-18 12:16:04] [Client: Internal] [User: NameServer] CACHE: HIT for 'newfile.txt'
+[2025-11-18 12:16:04] [Client: 127.0.0.1:59234] [User: Anushka] RES: READ for 'newfile.txt' success. Sending SS_LOCATION 127.0.0.1 9002 newfile.txt
+[2025-11-18 12:16:20] [Client: 127.0.0.1:59234] [User: Anushka] REQ: WRITE for 'newfile.txt', sentence 1.
+[2025-11-18 12:16:20] [Client: Internal] [User: NameServer] CACHE: HIT for 'newfile.txt'
+[2025-11-18 12:16:20] [Client: 127.0.0.1:59234] [User: Anushka] INFO: Lock granted for 'newfile.txt' (sent 1).
+[2025-11-18 12:16:20] [Client: 127.0.0.1:59234] [User: Anushka] RES: WRITE for 'newfile.txt' success. Sending SS_LOCATION 127.0.0.1 9002 newfile.txt
+[2025-11-18 12:16:30] [Client: 127.0.0.1:59234] [User: Anushka] REQ: RELEASE_LOCK for 'newfile.txt' (sent 1).
+[2025-11-18 12:16:30] [Client: 127.0.0.1:59234] [User: Anushka] RES: Lock released for 'newfile.txt' (sent 1).
+[2025-11-18 12:16:42] [Client: 127.0.0.1:59234] [User: Anushka] REQ: WRITE for 'newfile.txt', sentence 2.
+[2025-11-18 12:16:42] [Client: Internal] [User: NameServer] CACHE: HIT for 'newfile.txt'
+[2025-11-18 12:16:42] [Client: 127.0.0.1:59234] [User: Anushka] INFO: Lock granted for 'newfile.txt' (sent 2).
+[2025-11-18 12:16:42] [Client: 127.0.0.1:59234] [User: Anushka] RES: WRITE for 'newfile.txt' success. Sending SS_LOCATION 127.0.0.1 9002 newfile.txt
+[2025-11-18 12:16:50] [Client: 127.0.0.1:59234] [User: Anushka] REQ: RELEASE_LOCK for 'newfile.txt' (sent 2).
+[2025-11-18 12:16:50] [Client: 127.0.0.1:59234] [User: Anushka] RES: Lock released for 'newfile.txt' (sent 2).
+[2025-11-18 12:17:13] [Client: 127.0.0.1:59234] [User: Anushka] REQ: WRITE for 'newfile.txt', sentence 2.
+[2025-11-18 12:17:13] [Client: Internal] [User: NameServer] CACHE: HIT for 'newfile.txt'
+[2025-11-18 12:17:13] [Client: 127.0.0.1:59234] [User: Anushka] INFO: Lock granted for 'newfile.txt' (sent 2).
+[2025-11-18 12:17:13] [Client: 127.0.0.1:59234] [User: Anushka] RES: WRITE for 'newfile.txt' success. Sending SS_LOCATION 127.0.0.1 9002 newfile.txt
+[2025-11-18 12:17:22] [Client: 127.0.0.1:59234] [User: Anushka] REQ: RELEASE_LOCK for 'newfile.txt' (sent 2).
+[2025-11-18 12:17:22] [Client: 127.0.0.1:59234] [User: Anushka] RES: Lock released for 'newfile.txt' (sent 2).
+[2025-11-18 12:18:02] [Client: 127.0.0.1:59234] [User: Anushka] INFO: Client disconnected. Removing from list.
+[2025-11-18 12:18:02] [Client: 127.0.0.1:59234] [User: Anushka] INFO: Connection closed.
+[2025-11-18 12:27:41] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 7 files from registry.
+[2025-11-18 12:27:41] [Client: Internal] [User: NameServer] INFO: Heartbeat monitoring thread started
+[2025-11-18 12:27:41] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered SS0 (NM Port 9001, Client Port 9002)
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: testing.txt.bak
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: one.txt
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Re-linking existing file 'close.txt'.
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: close.txt.bak
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: newfile.txt.bak
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: two.txt
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Re-linking existing file 'newfile.txt'.
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: test.txt
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt.bak
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Re-linking existing file 'testing.txt'.
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt.bak
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt.bak
+[2025-11-18 12:27:51] [Client: 127.0.0.1:57014] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-18 12:28:08] [Client: 127.0.0.1:52506] [User: Anushka] REQ: REGISTER_CLIENT
+[2025-11-18 12:28:08] [Client: 127.0.0.1:52506] [User: Anushka] RES: Client registration successful.
+[2025-11-18 12:29:08] [Client: 127.0.0.1:52506] [User: Anushka] REQ: WRITE for 'newfile.txt', sentence 0.
+[2025-11-18 12:29:08] [Client: Internal] [User: NameServer] CACHE: MISS for 'newfile.txt'
+[2025-11-18 12:29:08] [Client: Internal] [User: NameServer] CACHE: ADD for 'newfile.txt'
+[2025-11-18 12:29:08] [Client: 127.0.0.1:52506] [User: Anushka] INFO: Lock granted for 'newfile.txt' (sent 0).
+[2025-11-18 12:29:08] [Client: 127.0.0.1:52506] [User: Anushka] RES: WRITE for 'newfile.txt' success. Sending SS_LOCATION 127.0.0.1 9002 newfile.txt
+[2025-11-18 12:29:17] [Client: 127.0.0.1:52506] [User: Anushka] REQ: RELEASE_LOCK for 'newfile.txt' (sent 0).
+[2025-11-18 12:29:17] [Client: 127.0.0.1:52506] [User: Anushka] RES: Lock released for 'newfile.txt' (sent 0).
+[2025-11-18 12:29:27] [Client: 127.0.0.1:52506] [User: Anushka] REQ: READ for 'newfile.txt'
+[2025-11-18 12:29:27] [Client: Internal] [User: NameServer] CACHE: HIT for 'newfile.txt'
+[2025-11-18 12:29:27] [Client: 127.0.0.1:52506] [User: Anushka] RES: READ for 'newfile.txt' success. Sending SS_LOCATION 127.0.0.1 9002 newfile.txt
+[2025-11-18 12:29:44] [Client: 127.0.0.1:52506] [User: Anushka] REQ: WRITE for 'newfile.txt', sentence 0.
+[2025-11-18 12:29:44] [Client: Internal] [User: NameServer] CACHE: HIT for 'newfile.txt'
+[2025-11-18 12:29:44] [Client: 127.0.0.1:52506] [User: Anushka] INFO: Lock granted for 'newfile.txt' (sent 0).
+[2025-11-18 12:29:44] [Client: 127.0.0.1:52506] [User: Anushka] RES: WRITE for 'newfile.txt' success. Sending SS_LOCATION 127.0.0.1 9002 newfile.txt
+[2025-11-18 12:30:00] [Client: 127.0.0.1:52506] [User: Anushka] REQ: RELEASE_LOCK for 'newfile.txt' (sent 0).
+[2025-11-18 12:30:00] [Client: 127.0.0.1:52506] [User: Anushka] RES: Lock released for 'newfile.txt' (sent 0).
+[2025-11-18 12:30:06] [Client: 127.0.0.1:52506] [User: Anushka] REQ: WRITE for 'newfile.txt', sentence 1.
+[2025-11-18 12:30:06] [Client: Internal] [User: NameServer] CACHE: HIT for 'newfile.txt'
+[2025-11-18 12:30:06] [Client: 127.0.0.1:52506] [User: Anushka] INFO: Lock granted for 'newfile.txt' (sent 1).
+[2025-11-18 12:30:06] [Client: 127.0.0.1:52506] [User: Anushka] RES: WRITE for 'newfile.txt' success. Sending SS_LOCATION 127.0.0.1 9002 newfile.txt
+[2025-11-18 12:30:18] [Client: 127.0.0.1:52506] [User: Anushka] REQ: RELEASE_LOCK for 'newfile.txt' (sent 1).
+[2025-11-18 12:30:18] [Client: 127.0.0.1:52506] [User: Anushka] RES: Lock released for 'newfile.txt' (sent 1).
+[2025-11-18 12:30:26] [Client: 127.0.0.1:52506] [User: Anushka] REQ: WRITE for 'newfile.txt', sentence 3.
+[2025-11-18 12:30:26] [Client: Internal] [User: NameServer] CACHE: HIT for 'newfile.txt'
+[2025-11-18 12:30:26] [Client: 127.0.0.1:52506] [User: Anushka] INFO: Lock granted for 'newfile.txt' (sent 3).
+[2025-11-18 12:30:26] [Client: 127.0.0.1:52506] [User: Anushka] RES: WRITE for 'newfile.txt' success. Sending SS_LOCATION 127.0.0.1 9002 newfile.txt
+[2025-11-18 12:30:32] [Client: 127.0.0.1:52506] [User: Anushka] REQ: RELEASE_LOCK for 'newfile.txt' (sent 3).
+[2025-11-18 12:30:32] [Client: 127.0.0.1:52506] [User: Anushka] RES: Lock released for 'newfile.txt' (sent 3).
+[2025-11-18 12:34:41] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 7 files from registry.
+[2025-11-18 12:34:41] [Client: Internal] [User: NameServer] INFO: Heartbeat monitoring thread started
+[2025-11-18 12:34:41] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered SS0 (NM Port 9001, Client Port 9002)
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: testing.txt.bak
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: one.txt
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Re-linking existing file 'close.txt'.
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: close.txt.bak
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: newfile.txt.bak
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: two.txt
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Re-linking existing file 'newfile.txt'.
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: test.txt
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt.bak
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Re-linking existing file 'testing.txt'.
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt.bak
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt.bak
+[2025-11-18 12:34:48] [Client: 127.0.0.1:60240] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-18 12:34:57] [Client: 127.0.0.1:53070] [User: ANUSHKA] REQ: REGISTER_CLIENT
+[2025-11-18 12:34:57] [Client: 127.0.0.1:53070] [User: ANUSHKA] RES: Client registration successful.
+[2025-11-18 12:35:10] [Client: 127.0.0.1:53070] [User: ANUSHKA] REQ: CREATE for 'writing.txt'
+[2025-11-18 12:35:10] [Client: 127.0.0.1:53070] [User: ANUSHKA] INFO: Assigning 'writing.txt' to SS0 (Round-robin)
+[2025-11-18 12:35:10] [Client: Internal] [User: NameServer] INFO: (Persistence) System state saved to disk (8 files).
+[2025-11-18 12:35:10] [Client: 127.0.0.1:53070] [User: ANUSHKA] RES: CREATE for 'writing.txt' success.
+[2025-11-18 12:35:18] [Client: 127.0.0.1:53070] [User: ANUSHKA] REQ: WRITE for 'writing.txt', sentence 0.
+[2025-11-18 12:35:18] [Client: Internal] [User: NameServer] CACHE: MISS for 'writing.txt'
+[2025-11-18 12:35:18] [Client: Internal] [User: NameServer] CACHE: ADD for 'writing.txt'
+[2025-11-18 12:35:18] [Client: 127.0.0.1:53070] [User: ANUSHKA] INFO: Lock granted for 'writing.txt' (sent 0).
+[2025-11-18 12:35:18] [Client: 127.0.0.1:53070] [User: ANUSHKA] RES: WRITE for 'writing.txt' success. Sending SS_LOCATION 127.0.0.1 9002 writing.txt
+[2025-11-18 12:35:38] [Client: 127.0.0.1:53070] [User: ANUSHKA] REQ: RELEASE_LOCK for 'writing.txt' (sent 0).
+[2025-11-18 12:35:38] [Client: 127.0.0.1:53070] [User: ANUSHKA] RES: Lock released for 'writing.txt' (sent 0).
+[2025-11-18 12:36:38] [Client: 127.0.0.1:53070] [User: ANUSHKA] REQ: READ for 'writing.txt'
+[2025-11-18 12:36:38] [Client: Internal] [User: NameServer] CACHE: HIT for 'writing.txt'
+[2025-11-18 12:36:38] [Client: 127.0.0.1:53070] [User: ANUSHKA] RES: READ for 'writing.txt' success. Sending SS_LOCATION 127.0.0.1 9002 writing.txt
+[2025-11-18 12:36:46] [Client: 127.0.0.1:53070] [User: ANUSHKA] REQ: WRITE for 'writing.txt', sentence 1.
+[2025-11-18 12:36:46] [Client: Internal] [User: NameServer] CACHE: HIT for 'writing.txt'
+[2025-11-18 12:36:46] [Client: 127.0.0.1:53070] [User: ANUSHKA] INFO: Lock granted for 'writing.txt' (sent 1).
+[2025-11-18 12:36:46] [Client: 127.0.0.1:53070] [User: ANUSHKA] RES: WRITE for 'writing.txt' success. Sending SS_LOCATION 127.0.0.1 9002 writing.txt
+[2025-11-18 12:36:52] [Client: 127.0.0.1:53070] [User: ANUSHKA] REQ: RELEASE_LOCK for 'writing.txt' (sent 1).
+[2025-11-18 12:36:52] [Client: 127.0.0.1:53070] [User: ANUSHKA] RES: Lock released for 'writing.txt' (sent 1).
+[2025-11-18 12:36:56] [Client: 127.0.0.1:53070] [User: ANUSHKA] REQ: READ for 'writing.txt'
+[2025-11-18 12:36:56] [Client: Internal] [User: NameServer] CACHE: HIT for 'writing.txt'
+[2025-11-18 12:36:56] [Client: 127.0.0.1:53070] [User: ANUSHKA] RES: READ for 'writing.txt' success. Sending SS_LOCATION 127.0.0.1 9002 writing.txt
+[2025-11-18 12:37:32] [Client: 127.0.0.1:53070] [User: ANUSHKA] REQ: WRITE for 'writing.txt', sentence 2.
+[2025-11-18 12:37:32] [Client: Internal] [User: NameServer] CACHE: HIT for 'writing.txt'
+[2025-11-18 12:37:32] [Client: 127.0.0.1:53070] [User: ANUSHKA] INFO: Lock granted for 'writing.txt' (sent 2).
+[2025-11-18 12:37:32] [Client: 127.0.0.1:53070] [User: ANUSHKA] RES: WRITE for 'writing.txt' success. Sending SS_LOCATION 127.0.0.1 9002 writing.txt
+[2025-11-18 12:37:41] [Client: 127.0.0.1:53070] [User: ANUSHKA] REQ: RELEASE_LOCK for 'writing.txt' (sent 2).
+[2025-11-18 12:37:41] [Client: 127.0.0.1:53070] [User: ANUSHKA] RES: Lock released for 'writing.txt' (sent 2).
+[2025-11-18 12:37:46] [Client: 127.0.0.1:53070] [User: ANUSHKA] REQ: READ for 'writing.txt'
+[2025-11-18 12:37:46] [Client: Internal] [User: NameServer] CACHE: HIT for 'writing.txt'
+[2025-11-18 12:37:46] [Client: 127.0.0.1:53070] [User: ANUSHKA] RES: READ for 'writing.txt' success. Sending SS_LOCATION 127.0.0.1 9002 writing.txt
+[2025-11-18 12:41:36] [Client: 127.0.0.1:53070] [User: ANUSHKA] INFO: Client disconnected. Removing from list.
+[2025-11-18 12:41:36] [Client: 127.0.0.1:53070] [User: ANUSHKA] INFO: Connection closed.
+[2025-11-18 12:41:49] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 8 files from registry.
+[2025-11-18 12:41:49] [Client: Internal] [User: NameServer] INFO: Heartbeat monitoring thread started
+[2025-11-18 12:41:49] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered SS0 (NM Port 9001, Client Port 9002)
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: testing.txt.bak
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: one.txt
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Re-linking existing file 'close.txt'.
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: close.txt.bak
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: newfile.txt.bak
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Re-linking existing file 'writing.txt'.
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: two.txt
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Re-linking existing file 'newfile.txt'.
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: writing.txt.bak
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: test.txt
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt.bak
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Re-linking existing file 'testing.txt'.
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt.bak
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt.bak
+[2025-11-18 12:41:58] [Client: 127.0.0.1:59748] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-18 12:42:12] [Client: 127.0.0.1:53944] [User: Anushka] REQ: REGISTER_CLIENT
+[2025-11-18 12:42:12] [Client: 127.0.0.1:53944] [User: Anushka] RES: Client registration successful.
+[2025-11-18 12:42:45] [Client: 127.0.0.1:53944] [User: Anushka] REQ: CREATE for 'fix.txt'
+[2025-11-18 12:42:45] [Client: 127.0.0.1:53944] [User: Anushka] INFO: Assigning 'fix.txt' to SS0 (Round-robin)
+[2025-11-18 12:42:45] [Client: Internal] [User: NameServer] INFO: (Persistence) System state saved to disk (9 files).
+[2025-11-18 12:42:45] [Client: 127.0.0.1:53944] [User: Anushka] RES: CREATE for 'fix.txt' success.
+[2025-11-18 12:42:55] [Client: 127.0.0.1:53944] [User: Anushka] REQ: WRITE for 'fix.txt', sentence 0.
+[2025-11-18 12:42:55] [Client: Internal] [User: NameServer] CACHE: MISS for 'fix.txt'
+[2025-11-18 12:42:55] [Client: Internal] [User: NameServer] CACHE: ADD for 'fix.txt'
+[2025-11-18 12:42:55] [Client: 127.0.0.1:53944] [User: Anushka] INFO: Lock granted for 'fix.txt' (sent 0).
+[2025-11-18 12:42:55] [Client: 127.0.0.1:53944] [User: Anushka] RES: WRITE for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 12:43:02] [Client: 127.0.0.1:53944] [User: Anushka] REQ: RELEASE_LOCK for 'fix.txt' (sent 0).
+[2025-11-18 12:43:02] [Client: 127.0.0.1:53944] [User: Anushka] RES: Lock released for 'fix.txt' (sent 0).
+[2025-11-18 12:43:13] [Client: 127.0.0.1:53944] [User: Anushka] REQ: WRITE for 'fix.txt', sentence 2.
+[2025-11-18 12:43:13] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 12:43:13] [Client: 127.0.0.1:53944] [User: Anushka] INFO: Lock granted for 'fix.txt' (sent 2).
+[2025-11-18 12:43:13] [Client: 127.0.0.1:53944] [User: Anushka] RES: WRITE for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 12:43:37] [Client: 127.0.0.1:53944] [User: Anushka] REQ: RELEASE_LOCK for 'fix.txt' (sent 2).
+[2025-11-18 12:43:37] [Client: 127.0.0.1:53944] [User: Anushka] RES: Lock released for 'fix.txt' (sent 2).
+[2025-11-18 12:43:44] [Client: 127.0.0.1:53944] [User: Anushka] REQ: UNDO for 'fix.txt'
+[2025-11-18 12:43:44] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 12:43:44] [Client: 127.0.0.1:53944] [User: Anushka] RES: UNDO for 'fix.txt' success.
+[2025-11-18 12:43:49] [Client: 127.0.0.1:53944] [User: Anushka] REQ: READ for 'fix.txt'
+[2025-11-18 12:43:49] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 12:43:49] [Client: 127.0.0.1:53944] [User: Anushka] RES: READ for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 12:44:03] [Client: 127.0.0.1:53944] [User: Anushka] REQ: WRITE for 'fix.txt', sentence 2.
+[2025-11-18 12:44:03] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 12:44:03] [Client: 127.0.0.1:53944] [User: Anushka] INFO: Lock granted for 'fix.txt' (sent 2).
+[2025-11-18 12:44:03] [Client: 127.0.0.1:53944] [User: Anushka] RES: WRITE for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 12:44:50] [Client: 127.0.0.1:53944] [User: Anushka] REQ: RELEASE_LOCK for 'fix.txt' (sent 2).
+[2025-11-18 12:44:50] [Client: 127.0.0.1:53944] [User: Anushka] RES: Lock released for 'fix.txt' (sent 2).
+[2025-11-18 12:44:56] [Client: 127.0.0.1:53944] [User: Anushka] REQ: READ for 'fix.txt'
+[2025-11-18 12:44:56] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 12:44:56] [Client: 127.0.0.1:53944] [User: Anushka] RES: READ for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 12:53:00] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 9 files from registry.
+[2025-11-18 12:53:00] [Client: Internal] [User: NameServer] INFO: Heartbeat monitoring thread started
+[2025-11-18 12:53:00] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered SS0 (NM Port 9001, Client Port 9002)
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: testing.txt.bak
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: one.txt
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Re-linking existing file 'close.txt'.
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: close.txt.bak
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: newfile.txt.bak
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Re-linking existing file 'writing.txt'.
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: two.txt
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Re-linking existing file 'newfile.txt'.
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: writing.txt.bak
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: test.txt
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt.bak
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Re-linking existing file 'testing.txt'.
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Re-linking existing file 'fix.txt'.
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt.bak
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: fix.txt.bak
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt.bak
+[2025-11-18 12:53:04] [Client: 127.0.0.1:56798] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-18 12:53:12] [Client: 127.0.0.1:57574] [User: Anushka] REQ: REGISTER_CLIENT
+[2025-11-18 12:53:12] [Client: 127.0.0.1:57574] [User: Anushka] RES: Client registration successful.
+[2025-11-18 12:53:51] [Client: 127.0.0.1:57574] [User: Anushka] REQ: READ for 'fix.txt'
+[2025-11-18 12:53:51] [Client: Internal] [User: NameServer] CACHE: MISS for 'fix.txt'
+[2025-11-18 12:53:51] [Client: Internal] [User: NameServer] CACHE: ADD for 'fix.txt'
+[2025-11-18 12:53:51] [Client: 127.0.0.1:57574] [User: Anushka] RES: READ for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 12:54:10] [Client: 127.0.0.1:57574] [User: Anushka] REQ: WRITE for 'fix.txt', sentence 2.
+[2025-11-18 12:54:10] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 12:54:10] [Client: 127.0.0.1:57574] [User: Anushka] INFO: Lock granted for 'fix.txt' (sent 2).
+[2025-11-18 12:54:10] [Client: 127.0.0.1:57574] [User: Anushka] RES: WRITE for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 12:54:25] [Client: 127.0.0.1:57574] [User: Anushka] REQ: RELEASE_LOCK for 'fix.txt' (sent 2).
+[2025-11-18 12:54:25] [Client: 127.0.0.1:57574] [User: Anushka] RES: Lock released for 'fix.txt' (sent 2).
+[2025-11-18 12:54:33] [Client: 127.0.0.1:57574] [User: Anushka] REQ: READ for 'fix.txt'
+[2025-11-18 12:54:33] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 12:54:33] [Client: 127.0.0.1:57574] [User: Anushka] RES: READ for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 12:54:57] [Client: 127.0.0.1:57574] [User: Anushka] REQ: WRITE for 'fix.txt', sentence 3.
+[2025-11-18 12:54:57] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 12:54:57] [Client: 127.0.0.1:57574] [User: Anushka] INFO: Lock granted for 'fix.txt' (sent 3).
+[2025-11-18 12:54:57] [Client: 127.0.0.1:57574] [User: Anushka] RES: WRITE for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 12:55:16] [Client: 127.0.0.1:57574] [User: Anushka] REQ: RELEASE_LOCK for 'fix.txt' (sent 3).
+[2025-11-18 12:55:16] [Client: 127.0.0.1:57574] [User: Anushka] RES: Lock released for 'fix.txt' (sent 3).
+[2025-11-18 12:55:21] [Client: 127.0.0.1:57574] [User: Anushka] REQ: READ for 'fix.txt'
+[2025-11-18 12:55:21] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 12:55:21] [Client: 127.0.0.1:57574] [User: Anushka] RES: READ for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 12:58:35] [Client: Internal] [User: NameServer] INFO: (Persistence) Successfully loaded 9 files from registry.
+[2025-11-18 12:58:35] [Client: Internal] [User: NameServer] INFO: Heartbeat monitoring thread started
+[2025-11-18 12:58:35] [Client: Internal] [User: NameServer] INFO: Name Server listening on port 8080
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] REQ: REGISTER_SS
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered SS0 (NM Port 9001, Client Port 9002)
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: nuh_uh.txt
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: wowee.txt
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: testing.txt.bak
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: one.txt
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Re-linking existing file 'close.txt'.
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: close.txt.bak
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: newfile.txt.bak
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Re-linking existing file 'writing.txt'.
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: two.txt
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Re-linking existing file 'newfile.txt'.
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: writing.txt.bak
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: test.txt
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: 5.txt.bak
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Re-linking existing file 'testing.txt'.
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Re-linking existing file 'fix.txt'.
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: testfile2.txt.bak
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: fix.txt.bak
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registered new non-persistent file: testfile1.txt.bak
+[2025-11-18 12:58:42] [Client: 127.0.0.1:34636] [User: StorageServer] INFO: Registration complete. Connection closed.
+[2025-11-18 12:58:48] [Client: 127.0.0.1:34648] [User: Anushka] REQ: REGISTER_CLIENT
+[2025-11-18 12:58:48] [Client: 127.0.0.1:34648] [User: Anushka] RES: Client registration successful.
+[2025-11-18 12:58:58] [Client: 127.0.0.1:34648] [User: Anushka] REQ: READ for 'fix.txt'
+[2025-11-18 12:58:58] [Client: Internal] [User: NameServer] CACHE: MISS for 'fix.txt'
+[2025-11-18 12:58:58] [Client: Internal] [User: NameServer] CACHE: ADD for 'fix.txt'
+[2025-11-18 12:58:58] [Client: 127.0.0.1:34648] [User: Anushka] RES: READ for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 12:59:34] [Client: 127.0.0.1:34648] [User: Anushka] REQ: STREAM for 'fix.txt'
+[2025-11-18 12:59:34] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 12:59:34] [Client: 127.0.0.1:34648] [User: Anushka] RES: STREAM for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 13:00:25] [Client: 127.0.0.1:34648] [User: Anushka] REQ: WRITE for 'fix.txt', sentence 5.
+[2025-11-18 13:00:25] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 13:00:25] [Client: 127.0.0.1:34648] [User: Anushka] INFO: Lock granted for 'fix.txt' (sent 5).
+[2025-11-18 13:00:25] [Client: 127.0.0.1:34648] [User: Anushka] RES: WRITE for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 13:00:44] [Client: 127.0.0.1:34648] [User: Anushka] REQ: RELEASE_LOCK for 'fix.txt' (sent 5).
+[2025-11-18 13:00:44] [Client: 127.0.0.1:34648] [User: Anushka] RES: Lock released for 'fix.txt' (sent 5).
+[2025-11-18 13:00:53] [Client: 127.0.0.1:34648] [User: Anushka] REQ: WRITE for 'fix.txt', sentence 6.
+[2025-11-18 13:00:53] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 13:00:53] [Client: 127.0.0.1:34648] [User: Anushka] INFO: Lock granted for 'fix.txt' (sent 6).
+[2025-11-18 13:00:53] [Client: 127.0.0.1:34648] [User: Anushka] RES: WRITE for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt
+[2025-11-18 13:01:03] [Client: 127.0.0.1:34648] [User: Anushka] REQ: RELEASE_LOCK for 'fix.txt' (sent 6).
+[2025-11-18 13:01:03] [Client: 127.0.0.1:34648] [User: Anushka] RES: Lock released for 'fix.txt' (sent 6).
+[2025-11-18 13:01:08] [Client: 127.0.0.1:34648] [User: Anushka] REQ: READ for 'fix.txt'
+[2025-11-18 13:01:08] [Client: Internal] [User: NameServer] CACHE: HIT for 'fix.txt'
+[2025-11-18 13:01:08] [Client: 127.0.0.1:34648] [User: Anushka] RES: READ for 'fix.txt' success. Sending SS_LOCATION 127.0.0.1 9002 fix.txt

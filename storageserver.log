@@ -643,3 +643,363 @@
 [2025-11-18 01:31:28] [Client: Internal] [Type: System] INFO: Heartbeat thread started
 [2025-11-18 01:31:28] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9003
 [2025-11-18 01:31:28] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9004
+[2025-11-18 10:28:45] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-18 10:28:45] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-18 10:28:45] [Client: Internal] [Type: System] INFO: Heartbeat thread started
+[2025-11-18 10:28:45] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-18 10:28:45] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-18 10:29:18] [Client: 127.0.0.1:50936] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-18 10:29:18] [Client: 127.0.0.1:50936] [Type: NameServer] REQ: CREATE_FILE for 'testing.txt'
+[2025-11-18 10:29:18] [Client: 127.0.0.1:50936] [Type: NameServer] RES: CREATE_FILE for 'testing.txt' success.
+[2025-11-18 10:29:18] [Client: 127.0.0.1:50936] [Type: NameServer] INFO: Connection closed.
+[2025-11-18 10:29:26] [Client: 127.0.0.1:55896] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:29:26] [Client: 127.0.0.1:55898] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:29:26] [Client: 127.0.0.1:55896] [Type: Client] Connection closed before sending request.
+[2025-11-18 10:29:26] [Client: 127.0.0.1:55898] [Type: Client] REQ: WRITE_START for 'testing.txt', sentence 0
+[2025-11-18 10:29:26] [Client: 127.0.0.1:55898] [Type: Client] ACK: WRITE_START for 'testing.txt'. Entering session.
+[2025-11-18 10:29:34] [Client: 127.0.0.1:55898] [Type: Client] ACK: WRITE for 'testing.txt' success (sent 0, word 0).
+[2025-11-18 10:29:47] [Client: 127.0.0.1:55898] [Type: Client] ACK: WRITE for 'testing.txt' success (sent 0, word 1).
+[2025-11-18 10:29:51] [Client: 127.0.0.1:55898] [Type: Client] REQ: ETIRW for 'testing.txt'. Finalizing changes.
+[2025-11-18 10:29:51] [Client: 127.0.0.1:55898] [Type: Client] ACK: Successfully saved changes to 'testing.txt'.
+[2025-11-18 10:29:51] [Client: 127.0.0.1:55898] [Type: Client] INFO: Write session for 'testing.txt' ended.
+[2025-11-18 10:29:51] [Client: 127.0.0.1:55898] [Type: Client] INFO: Connection closed.
+[2025-11-18 10:30:01] [Client: 127.0.0.1:53890] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:30:01] [Client: 127.0.0.1:53890] [Type: Client] Connection closed before sending request.
+[2025-11-18 10:30:01] [Client: 127.0.0.1:53900] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:30:01] [Client: 127.0.0.1:53900] [Type: Client] REQ: READ_FILE for 'testing.txt'
+[2025-11-18 10:30:01] [Client: 127.0.0.1:53900] [Type: Client] RES: Successfully sent file 'testing.txt'.
+[2025-11-18 10:30:01] [Client: 127.0.0.1:53900] [Type: Client] INFO: Connection closed.
+[2025-11-18 10:30:16] [Client: 127.0.0.1:59878] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:30:16] [Client: 127.0.0.1:59878] [Type: Client] Connection closed before sending request.
+[2025-11-18 10:30:16] [Client: 127.0.0.1:59880] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:30:16] [Client: 127.0.0.1:59880] [Type: Client] REQ: READ_FILE for 'testing.txt'
+[2025-11-18 10:30:16] [Client: 127.0.0.1:59880] [Type: Client] RES: Successfully sent file 'testing.txt'.
+[2025-11-18 10:30:16] [Client: 127.0.0.1:59880] [Type: Client] INFO: Connection closed.
+[2025-11-18 10:42:00] [Client: 127.0.0.1:45066] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:42:00] [Client: 127.0.0.1:45066] [Type: Client] Connection closed before sending request.
+[2025-11-18 10:42:00] [Client: 127.0.0.1:45078] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:42:00] [Client: 127.0.0.1:45078] [Type: Client] REQ: WRITE_START for 'testing.txt', sentence 1
+[2025-11-18 10:42:00] [Client: 127.0.0.1:45078] [Type: Client] ACK: WRITE_START for 'testing.txt'. Entering session.
+[2025-11-18 10:49:43] [Client: 127.0.0.1:45078] [Type: Client] INFO: Write session for 'testing.txt' ended.
+[2025-11-18 10:49:43] [Client: 127.0.0.1:45078] [Type: Client] INFO: Connection closed.
+[2025-11-18 10:50:27] [Client: 127.0.0.1:49412] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-18 10:50:27] [Client: 127.0.0.1:49412] [Type: NameServer] REQ: CREATE_FILE for 'close.txt'
+[2025-11-18 10:50:27] [Client: 127.0.0.1:49412] [Type: NameServer] RES: CREATE_FILE for 'close.txt' success.
+[2025-11-18 10:50:27] [Client: 127.0.0.1:49412] [Type: NameServer] INFO: Connection closed.
+[2025-11-18 10:50:54] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-18 10:50:54] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-18 10:50:54] [Client: Internal] [Type: System] INFO: Heartbeat thread started
+[2025-11-18 10:50:54] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-18 10:50:54] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-18 10:51:16] [Client: 127.0.0.1:44406] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:51:16] [Client: 127.0.0.1:44406] [Type: Client] Connection closed before sending request.
+[2025-11-18 10:51:16] [Client: 127.0.0.1:44422] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:51:16] [Client: 127.0.0.1:44422] [Type: Client] REQ: READ_FILE for 'close.txt'
+[2025-11-18 10:51:16] [Client: 127.0.0.1:44422] [Type: Client] RES: Successfully sent file 'close.txt'.
+[2025-11-18 10:51:16] [Client: 127.0.0.1:44422] [Type: Client] INFO: Connection closed.
+[2025-11-18 10:51:53] [Client: 127.0.0.1:48354] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:51:53] [Client: 127.0.0.1:48354] [Type: Client] Connection closed before sending request.
+[2025-11-18 10:51:53] [Client: 127.0.0.1:48358] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:51:53] [Client: 127.0.0.1:48358] [Type: Client] REQ: WRITE_START for 'close.txt', sentence 0
+[2025-11-18 10:51:53] [Client: 127.0.0.1:48358] [Type: Client] ACK: WRITE_START for 'close.txt'. Entering session.
+[2025-11-18 10:52:06] [Client: 127.0.0.1:48358] [Type: Client] ACK: WRITE for 'close.txt' success (sent 0, word 0).
+[2025-11-18 10:53:05] [Client: 127.0.0.1:48358] [Type: Client] ACK: WRITE for 'close.txt' success (sent 0, word 1).
+[2025-11-18 10:53:15] [Client: 127.0.0.1:48358] [Type: Client] REQ: ETIRW for 'close.txt'. Finalizing changes.
+[2025-11-18 10:53:15] [Client: 127.0.0.1:48358] [Type: Client] ACK: Successfully saved changes to 'close.txt'.
+[2025-11-18 10:53:15] [Client: 127.0.0.1:48358] [Type: Client] INFO: Write session for 'close.txt' ended.
+[2025-11-18 10:53:15] [Client: 127.0.0.1:48358] [Type: Client] INFO: Connection closed.
+[2025-11-18 10:53:20] [Client: 127.0.0.1:34918] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:53:20] [Client: 127.0.0.1:34934] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 10:53:20] [Client: 127.0.0.1:34918] [Type: Client] Connection closed before sending request.
+[2025-11-18 10:53:20] [Client: 127.0.0.1:34934] [Type: Client] REQ: READ_FILE for 'close.txt'
+[2025-11-18 10:53:20] [Client: 127.0.0.1:34934] [Type: Client] RES: Successfully sent file 'close.txt'.
+[2025-11-18 10:53:20] [Client: 127.0.0.1:34934] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:14:09] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-18 12:14:09] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-18 12:14:09] [Client: Internal] [Type: System] INFO: Heartbeat thread started
+[2025-11-18 12:14:09] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-18 12:14:09] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-18 12:14:34] [Client: 127.0.0.1:35442] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-18 12:14:34] [Client: 127.0.0.1:35442] [Type: NameServer] REQ: CREATE_FILE for 'newfile.txt'
+[2025-11-18 12:14:34] [Client: 127.0.0.1:35442] [Type: NameServer] RES: CREATE_FILE for 'newfile.txt' success.
+[2025-11-18 12:14:34] [Client: 127.0.0.1:35442] [Type: NameServer] INFO: Connection closed.
+[2025-11-18 12:14:56] [Client: 127.0.0.1:50094] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:14:56] [Client: 127.0.0.1:50108] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:14:56] [Client: 127.0.0.1:50094] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:14:56] [Client: 127.0.0.1:50108] [Type: Client] REQ: WRITE_START for 'newfile.txt', sentence 0
+[2025-11-18 12:14:56] [Client: 127.0.0.1:50108] [Type: Client] ACK: WRITE_START for 'newfile.txt'. Entering session.
+[2025-11-18 12:15:09] [Client: 127.0.0.1:50108] [Type: Client] ACK: WRITE for 'newfile.txt' success (sent 0, word 0).
+[2025-11-18 12:15:15] [Client: 127.0.0.1:50108] [Type: Client] ACK: WRITE for 'newfile.txt' success (sent 0, word 1).
+[2025-11-18 12:15:19] [Client: 127.0.0.1:50108] [Type: Client] REQ: ETIRW for 'newfile.txt'. Finalizing changes.
+[2025-11-18 12:15:19] [Client: 127.0.0.1:50108] [Type: Client] ACK: Successfully saved changes to 'newfile.txt'.
+[2025-11-18 12:15:19] [Client: 127.0.0.1:50108] [Type: Client] INFO: Write session for 'newfile.txt' ended.
+[2025-11-18 12:15:19] [Client: 127.0.0.1:50108] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:16:04] [Client: 127.0.0.1:47300] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:16:04] [Client: 127.0.0.1:47314] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:16:04] [Client: 127.0.0.1:47300] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:16:04] [Client: 127.0.0.1:47314] [Type: Client] REQ: READ_FILE for 'newfile.txt'
+[2025-11-18 12:16:04] [Client: 127.0.0.1:47314] [Type: Client] RES: Successfully sent file 'newfile.txt'.
+[2025-11-18 12:16:04] [Client: 127.0.0.1:47314] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:16:20] [Client: 127.0.0.1:35070] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:16:20] [Client: 127.0.0.1:35070] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:16:20] [Client: 127.0.0.1:35084] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:16:20] [Client: 127.0.0.1:35084] [Type: Client] REQ: WRITE_START for 'newfile.txt', sentence 1
+[2025-11-18 12:16:20] [Client: 127.0.0.1:35084] [Type: Client] ACK: WRITE_START for 'newfile.txt'. Entering session.
+[2025-11-18 12:16:23] [Client: 127.0.0.1:35084] [Type: Client] WARN: WRITE for 'newfile.txt': Invalid format from client: ...
+[2025-11-18 12:16:28] [Client: 127.0.0.1:35084] [Type: Client] ACK: WRITE for 'newfile.txt' success (sent 1, word 0).
+[2025-11-18 12:16:30] [Client: 127.0.0.1:35084] [Type: Client] REQ: ETIRW for 'newfile.txt'. Finalizing changes.
+[2025-11-18 12:16:30] [Client: 127.0.0.1:35084] [Type: Client] ACK: Successfully saved changes to 'newfile.txt'.
+[2025-11-18 12:16:30] [Client: 127.0.0.1:35084] [Type: Client] INFO: Write session for 'newfile.txt' ended.
+[2025-11-18 12:16:30] [Client: 127.0.0.1:35084] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:16:42] [Client: 127.0.0.1:60040] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:16:42] [Client: 127.0.0.1:60040] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:16:42] [Client: 127.0.0.1:60044] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:16:42] [Client: 127.0.0.1:60044] [Type: Client] REQ: WRITE_START for 'newfile.txt', sentence 2
+[2025-11-18 12:16:42] [Client: 127.0.0.1:60044] [Type: Client] RES: WRITE_START for 'newfile.txt' failed: Sentence index 2 out of range.
+[2025-11-18 12:17:13] [Client: 127.0.0.1:35914] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:17:13] [Client: 127.0.0.1:35914] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:17:13] [Client: 127.0.0.1:35928] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:17:13] [Client: 127.0.0.1:35928] [Type: Client] REQ: WRITE_START for 'newfile.txt', sentence 2
+[2025-11-18 12:17:13] [Client: 127.0.0.1:35928] [Type: Client] RES: WRITE_START for 'newfile.txt' failed: Sentence index 2 out of range.
+[2025-11-18 12:27:51] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-18 12:27:51] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-18 12:27:51] [Client: Internal] [Type: System] INFO: Heartbeat thread started
+[2025-11-18 12:27:51] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-18 12:27:51] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-18 12:29:08] [Client: 127.0.0.1:35736] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:29:08] [Client: 127.0.0.1:35740] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:29:08] [Client: 127.0.0.1:35736] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:29:08] [Client: 127.0.0.1:35740] [Type: Client] REQ: WRITE_START for 'newfile.txt', sentence 0
+[2025-11-18 12:29:08] [Client: 127.0.0.1:35740] [Type: Client] ACK: WRITE_START for 'newfile.txt'. Entering session.
+[2025-11-18 12:29:17] [Client: 127.0.0.1:35740] [Type: Client] REQ: ETIRW for 'newfile.txt'. Finalizing changes.
+[2025-11-18 12:29:17] [Client: 127.0.0.1:35740] [Type: Client] ACK: Successfully saved changes to 'newfile.txt'.
+[2025-11-18 12:29:17] [Client: 127.0.0.1:35740] [Type: Client] INFO: Write session for 'newfile.txt' ended.
+[2025-11-18 12:29:17] [Client: 127.0.0.1:35740] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:29:27] [Client: 127.0.0.1:35956] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:29:27] [Client: 127.0.0.1:35968] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:29:27] [Client: 127.0.0.1:35956] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:29:27] [Client: 127.0.0.1:35968] [Type: Client] REQ: READ_FILE for 'newfile.txt'
+[2025-11-18 12:29:27] [Client: 127.0.0.1:35968] [Type: Client] RES: Successfully sent file 'newfile.txt'.
+[2025-11-18 12:29:27] [Client: 127.0.0.1:35968] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:29:44] [Client: 127.0.0.1:49602] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:29:44] [Client: 127.0.0.1:49602] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:29:44] [Client: 127.0.0.1:49618] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:29:44] [Client: 127.0.0.1:49618] [Type: Client] REQ: WRITE_START for 'newfile.txt', sentence 0
+[2025-11-18 12:29:44] [Client: 127.0.0.1:49618] [Type: Client] ACK: WRITE_START for 'newfile.txt'. Entering session.
+[2025-11-18 12:30:00] [Client: 127.0.0.1:49618] [Type: Client] REQ: ETIRW for 'newfile.txt'. Finalizing changes.
+[2025-11-18 12:30:00] [Client: 127.0.0.1:49618] [Type: Client] ACK: Successfully saved changes to 'newfile.txt'.
+[2025-11-18 12:30:00] [Client: 127.0.0.1:49618] [Type: Client] INFO: Write session for 'newfile.txt' ended.
+[2025-11-18 12:30:00] [Client: 127.0.0.1:49618] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:30:06] [Client: 127.0.0.1:40226] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:30:06] [Client: 127.0.0.1:40240] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:30:06] [Client: 127.0.0.1:40226] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:30:06] [Client: 127.0.0.1:40240] [Type: Client] REQ: WRITE_START for 'newfile.txt', sentence 1
+[2025-11-18 12:30:06] [Client: 127.0.0.1:40240] [Type: Client] ACK: WRITE_START for 'newfile.txt'. Entering session.
+[2025-11-18 12:30:13] [Client: 127.0.0.1:40240] [Type: Client] ACK: WRITE for 'newfile.txt' success (sent 1, word 0).
+[2025-11-18 12:30:18] [Client: 127.0.0.1:40240] [Type: Client] REQ: ETIRW for 'newfile.txt'. Finalizing changes.
+[2025-11-18 12:30:18] [Client: 127.0.0.1:40240] [Type: Client] ACK: Successfully saved changes to 'newfile.txt'.
+[2025-11-18 12:30:18] [Client: 127.0.0.1:40240] [Type: Client] INFO: Write session for 'newfile.txt' ended.
+[2025-11-18 12:30:18] [Client: 127.0.0.1:40240] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:30:26] [Client: 127.0.0.1:53992] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:30:26] [Client: 127.0.0.1:53992] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:30:26] [Client: 127.0.0.1:54008] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:30:26] [Client: 127.0.0.1:54008] [Type: Client] REQ: WRITE_START for 'newfile.txt', sentence 3
+[2025-11-18 12:30:26] [Client: 127.0.0.1:54008] [Type: Client] RES: WRITE_START for 'newfile.txt' failed: Sentence index 3 out of range.
+[2025-11-18 12:34:48] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-18 12:34:48] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-18 12:34:48] [Client: Internal] [Type: System] INFO: Heartbeat thread started
+[2025-11-18 12:34:48] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-18 12:34:48] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-18 12:35:10] [Client: 127.0.0.1:32774] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-18 12:35:10] [Client: 127.0.0.1:32774] [Type: NameServer] REQ: CREATE_FILE for 'writing.txt'
+[2025-11-18 12:35:10] [Client: 127.0.0.1:32774] [Type: NameServer] RES: CREATE_FILE for 'writing.txt' success.
+[2025-11-18 12:35:10] [Client: 127.0.0.1:32774] [Type: NameServer] INFO: Connection closed.
+[2025-11-18 12:35:18] [Client: 127.0.0.1:58812] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:35:18] [Client: 127.0.0.1:58812] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:35:18] [Client: 127.0.0.1:58818] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:35:18] [Client: 127.0.0.1:58818] [Type: Client] REQ: WRITE_START for 'writing.txt', sentence 0
+[2025-11-18 12:35:18] [Client: 127.0.0.1:58818] [Type: Client] ACK: WRITE_START for 'writing.txt'. Entering session.
+[2025-11-18 12:35:28] [Client: 127.0.0.1:58818] [Type: Client] ACK: WRITE for 'writing.txt' success (sent 0, word 0).
+[2025-11-18 12:35:34] [Client: 127.0.0.1:58818] [Type: Client] ACK: WRITE for 'writing.txt' success (sent 0, word 1).
+[2025-11-18 12:35:38] [Client: 127.0.0.1:58818] [Type: Client] REQ: ETIRW for 'writing.txt'. Finalizing changes.
+[2025-11-18 12:35:38] [Client: 127.0.0.1:58818] [Type: Client] ACK: Successfully saved changes to 'writing.txt'.
+[2025-11-18 12:35:38] [Client: 127.0.0.1:58818] [Type: Client] INFO: Write session for 'writing.txt' ended.
+[2025-11-18 12:35:38] [Client: 127.0.0.1:58818] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:36:38] [Client: 127.0.0.1:49792] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:36:38] [Client: 127.0.0.1:49808] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:36:38] [Client: 127.0.0.1:49792] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:36:38] [Client: 127.0.0.1:49808] [Type: Client] REQ: READ_FILE for 'writing.txt'
+[2025-11-18 12:36:38] [Client: 127.0.0.1:49808] [Type: Client] RES: Successfully sent file 'writing.txt'.
+[2025-11-18 12:36:38] [Client: 127.0.0.1:49808] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:36:46] [Client: 127.0.0.1:58624] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:36:46] [Client: 127.0.0.1:58634] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:36:46] [Client: 127.0.0.1:58624] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:36:46] [Client: 127.0.0.1:58634] [Type: Client] REQ: WRITE_START for 'writing.txt', sentence 1
+[2025-11-18 12:36:46] [Client: 127.0.0.1:58634] [Type: Client] ACK: WRITE_START for 'writing.txt'. Entering session.
+[2025-11-18 12:36:48] [Client: 127.0.0.1:58634] [Type: Client] ACK: WRITE for 'writing.txt' success (sent 1, word 0).
+[2025-11-18 12:36:52] [Client: 127.0.0.1:58634] [Type: Client] REQ: ETIRW for 'writing.txt'. Finalizing changes.
+[2025-11-18 12:36:52] [Client: 127.0.0.1:58634] [Type: Client] ACK: Successfully saved changes to 'writing.txt'.
+[2025-11-18 12:36:52] [Client: 127.0.0.1:58634] [Type: Client] INFO: Write session for 'writing.txt' ended.
+[2025-11-18 12:36:52] [Client: 127.0.0.1:58634] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:36:56] [Client: 127.0.0.1:37184] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:36:56] [Client: 127.0.0.1:37198] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:36:56] [Client: 127.0.0.1:37184] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:36:56] [Client: 127.0.0.1:37198] [Type: Client] REQ: READ_FILE for 'writing.txt'
+[2025-11-18 12:36:56] [Client: 127.0.0.1:37198] [Type: Client] RES: Successfully sent file 'writing.txt'.
+[2025-11-18 12:36:56] [Client: 127.0.0.1:37198] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:37:32] [Client: 127.0.0.1:45476] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:37:32] [Client: 127.0.0.1:45476] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:37:32] [Client: 127.0.0.1:45490] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:37:32] [Client: 127.0.0.1:45490] [Type: Client] REQ: WRITE_START for 'writing.txt', sentence 2
+[2025-11-18 12:37:32] [Client: 127.0.0.1:45490] [Type: Client] ACK: WRITE_START for 'writing.txt'. Entering session.
+[2025-11-18 12:37:37] [Client: 127.0.0.1:45490] [Type: Client] ACK: WRITE for 'writing.txt' success (sent 2, word 0).
+[2025-11-18 12:37:41] [Client: 127.0.0.1:45490] [Type: Client] REQ: ETIRW for 'writing.txt'. Finalizing changes.
+[2025-11-18 12:37:41] [Client: 127.0.0.1:45490] [Type: Client] ACK: Successfully saved changes to 'writing.txt'.
+[2025-11-18 12:37:41] [Client: 127.0.0.1:45490] [Type: Client] INFO: Write session for 'writing.txt' ended.
+[2025-11-18 12:37:41] [Client: 127.0.0.1:45490] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:37:46] [Client: 127.0.0.1:33368] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:37:46] [Client: 127.0.0.1:33368] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:37:46] [Client: 127.0.0.1:33370] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:37:46] [Client: 127.0.0.1:33370] [Type: Client] REQ: READ_FILE for 'writing.txt'
+[2025-11-18 12:37:46] [Client: 127.0.0.1:33370] [Type: Client] RES: Successfully sent file 'writing.txt'.
+[2025-11-18 12:37:46] [Client: 127.0.0.1:33370] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:41:58] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-18 12:41:58] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-18 12:41:58] [Client: Internal] [Type: System] INFO: Heartbeat thread started
+[2025-11-18 12:41:58] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-18 12:41:58] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-18 12:42:45] [Client: 127.0.0.1:58336] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-18 12:42:45] [Client: 127.0.0.1:58336] [Type: NameServer] REQ: CREATE_FILE for 'fix.txt'
+[2025-11-18 12:42:45] [Client: 127.0.0.1:58336] [Type: NameServer] RES: CREATE_FILE for 'fix.txt' success.
+[2025-11-18 12:42:45] [Client: 127.0.0.1:58336] [Type: NameServer] INFO: Connection closed.
+[2025-11-18 12:42:55] [Client: 127.0.0.1:38208] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:42:55] [Client: 127.0.0.1:38208] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:42:55] [Client: 127.0.0.1:38210] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:42:55] [Client: 127.0.0.1:38210] [Type: Client] REQ: WRITE_START for 'fix.txt', sentence 0
+[2025-11-18 12:42:55] [Client: 127.0.0.1:38210] [Type: Client] ACK: WRITE_START for 'fix.txt'. Entering session.
+[2025-11-18 12:42:59] [Client: 127.0.0.1:38210] [Type: Client] ACK: WRITE for 'fix.txt' success (sent 0, word 0).
+[2025-11-18 12:43:02] [Client: 127.0.0.1:38210] [Type: Client] REQ: ETIRW for 'fix.txt'. Finalizing changes.
+[2025-11-18 12:43:02] [Client: 127.0.0.1:38210] [Type: Client] ACK: Successfully saved changes to 'fix.txt'.
+[2025-11-18 12:43:02] [Client: 127.0.0.1:38210] [Type: Client] INFO: Write session for 'fix.txt' ended.
+[2025-11-18 12:43:02] [Client: 127.0.0.1:38210] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:43:13] [Client: 127.0.0.1:46780] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:43:13] [Client: 127.0.0.1:46786] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:43:13] [Client: 127.0.0.1:46780] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:43:13] [Client: 127.0.0.1:46786] [Type: Client] REQ: WRITE_START for 'fix.txt', sentence 2
+[2025-11-18 12:43:13] [Client: 127.0.0.1:46786] [Type: Client] ACK: WRITE_START for 'fix.txt'. Entering session.
+[2025-11-18 12:43:37] [Client: 127.0.0.1:46786] [Type: Client] REQ: ETIRW for 'fix.txt'. Finalizing changes.
+[2025-11-18 12:43:37] [Client: 127.0.0.1:46786] [Type: Client] ACK: Successfully saved changes to 'fix.txt'.
+[2025-11-18 12:43:37] [Client: 127.0.0.1:46786] [Type: Client] INFO: Write session for 'fix.txt' ended.
+[2025-11-18 12:43:37] [Client: 127.0.0.1:46786] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:43:44] [Client: 127.0.0.1:34462] [Type: NameServer] INFO: Accepted new connection.
+[2025-11-18 12:43:44] [Client: 127.0.0.1:34462] [Type: NameServer] REQ: UNDO_FILE for 'fix.txt'
+[2025-11-18 12:43:44] [Client: 127.0.0.1:34462] [Type: NameServer] RES: UNDO_FILE for 'fix.txt' success.
+[2025-11-18 12:43:44] [Client: 127.0.0.1:34462] [Type: NameServer] INFO: Connection closed.
+[2025-11-18 12:43:49] [Client: 127.0.0.1:36612] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:43:49] [Client: 127.0.0.1:36612] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:43:49] [Client: 127.0.0.1:36626] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:43:49] [Client: 127.0.0.1:36626] [Type: Client] REQ: READ_FILE for 'fix.txt'
+[2025-11-18 12:43:49] [Client: 127.0.0.1:36626] [Type: Client] RES: Successfully sent file 'fix.txt'.
+[2025-11-18 12:43:49] [Client: 127.0.0.1:36626] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:44:03] [Client: 127.0.0.1:46082] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:44:03] [Client: 127.0.0.1:46098] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:44:03] [Client: 127.0.0.1:46082] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:44:03] [Client: 127.0.0.1:46098] [Type: Client] REQ: WRITE_START for 'fix.txt', sentence 2
+[2025-11-18 12:44:03] [Client: 127.0.0.1:46098] [Type: Client] ACK: WRITE_START for 'fix.txt'. Entering session.
+[2025-11-18 12:44:46] [Client: 127.0.0.1:46098] [Type: Client] ACK: WRITE for 'fix.txt' success (sent 2, word 0).
+[2025-11-18 12:44:50] [Client: 127.0.0.1:46098] [Type: Client] REQ: ETIRW for 'fix.txt'. Finalizing changes.
+[2025-11-18 12:44:50] [Client: 127.0.0.1:46098] [Type: Client] ACK: Successfully saved changes to 'fix.txt'.
+[2025-11-18 12:44:50] [Client: 127.0.0.1:46098] [Type: Client] INFO: Write session for 'fix.txt' ended.
+[2025-11-18 12:44:50] [Client: 127.0.0.1:46098] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:44:56] [Client: 127.0.0.1:40896] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:44:56] [Client: 127.0.0.1:40912] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:44:56] [Client: 127.0.0.1:40896] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:44:56] [Client: 127.0.0.1:40912] [Type: Client] REQ: READ_FILE for 'fix.txt'
+[2025-11-18 12:44:56] [Client: 127.0.0.1:40912] [Type: Client] RES: Successfully sent file 'fix.txt'.
+[2025-11-18 12:44:56] [Client: 127.0.0.1:40912] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:53:04] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-18 12:53:04] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-18 12:53:04] [Client: Internal] [Type: System] INFO: Heartbeat thread started
+[2025-11-18 12:53:04] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-18 12:53:04] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-18 12:53:51] [Client: 127.0.0.1:50992] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:53:51] [Client: 127.0.0.1:51004] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:53:51] [Client: 127.0.0.1:50992] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:53:51] [Client: 127.0.0.1:51004] [Type: Client] REQ: READ_FILE for 'fix.txt'
+[2025-11-18 12:53:51] [Client: 127.0.0.1:51004] [Type: Client] RES: Successfully sent file 'fix.txt'.
+[2025-11-18 12:53:51] [Client: 127.0.0.1:51004] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:54:10] [Client: 127.0.0.1:38508] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:54:10] [Client: 127.0.0.1:38518] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:54:10] [Client: 127.0.0.1:38508] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:54:10] [Client: 127.0.0.1:38518] [Type: Client] REQ: WRITE_START for 'fix.txt', sentence 2
+[2025-11-18 12:54:10] [Client: 127.0.0.1:38518] [Type: Client] ACK: WRITE_START for 'fix.txt'. Entering session.
+[2025-11-18 12:54:22] [Client: 127.0.0.1:38518] [Type: Client] ACK: WRITE for 'fix.txt' success (sent 2, word 0).
+[2025-11-18 12:54:25] [Client: 127.0.0.1:38518] [Type: Client] REQ: ETIRW for 'fix.txt'. Finalizing changes.
+[2025-11-18 12:54:25] [Client: 127.0.0.1:38518] [Type: Client] ACK: Successfully saved changes to 'fix.txt'.
+[2025-11-18 12:54:25] [Client: 127.0.0.1:38518] [Type: Client] INFO: Write session for 'fix.txt' ended.
+[2025-11-18 12:54:25] [Client: 127.0.0.1:38518] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:54:33] [Client: 127.0.0.1:33762] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:54:33] [Client: 127.0.0.1:33762] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:54:33] [Client: 127.0.0.1:33768] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:54:33] [Client: 127.0.0.1:33768] [Type: Client] REQ: READ_FILE for 'fix.txt'
+[2025-11-18 12:54:33] [Client: 127.0.0.1:33768] [Type: Client] RES: Successfully sent file 'fix.txt'.
+[2025-11-18 12:54:33] [Client: 127.0.0.1:33768] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:54:57] [Client: 127.0.0.1:47288] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:54:57] [Client: 127.0.0.1:47292] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:54:57] [Client: 127.0.0.1:47288] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:54:57] [Client: 127.0.0.1:47292] [Type: Client] REQ: WRITE_START for 'fix.txt', sentence 3
+[2025-11-18 12:54:57] [Client: 127.0.0.1:47292] [Type: Client] ACK: WRITE_START for 'fix.txt'. Entering session.
+[2025-11-18 12:55:06] [Client: 127.0.0.1:47292] [Type: Client] ACK: WRITE for 'fix.txt' success (sent 3, word 0).
+[2025-11-18 12:55:16] [Client: 127.0.0.1:47292] [Type: Client] REQ: ETIRW for 'fix.txt'. Finalizing changes.
+[2025-11-18 12:55:16] [Client: 127.0.0.1:47292] [Type: Client] ACK: Successfully saved changes to 'fix.txt'.
+[2025-11-18 12:55:16] [Client: 127.0.0.1:47292] [Type: Client] INFO: Write session for 'fix.txt' ended.
+[2025-11-18 12:55:16] [Client: 127.0.0.1:47292] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:55:21] [Client: 127.0.0.1:46310] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:55:21] [Client: 127.0.0.1:46310] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:55:21] [Client: 127.0.0.1:46322] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:55:21] [Client: 127.0.0.1:46322] [Type: Client] REQ: READ_FILE for 'fix.txt'
+[2025-11-18 12:55:21] [Client: 127.0.0.1:46322] [Type: Client] RES: Successfully sent file 'fix.txt'.
+[2025-11-18 12:55:21] [Client: 127.0.0.1:46322] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:58:42] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Connected to Name Server.
+[2025-11-18 12:58:42] [Client: 127.0.0.1] [Type: System] INFO: (NM-Registration) Sent registration message.
+[2025-11-18 12:58:42] [Client: Internal] [Type: System] INFO: Heartbeat thread started
+[2025-11-18 12:58:42] [Client: Internal] [Type: System] INFO: Starting NM-facing server on port 9001
+[2025-11-18 12:58:42] [Client: Internal] [Type: System] INFO: Starting client-facing server on port 9002
+[2025-11-18 12:58:58] [Client: 127.0.0.1:56966] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:58:58] [Client: 127.0.0.1:56966] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:58:58] [Client: 127.0.0.1:56982] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:58:58] [Client: 127.0.0.1:56982] [Type: Client] REQ: READ_FILE for 'fix.txt'
+[2025-11-18 12:58:58] [Client: 127.0.0.1:56982] [Type: Client] RES: Successfully sent file 'fix.txt'.
+[2025-11-18 12:58:58] [Client: 127.0.0.1:56982] [Type: Client] INFO: Connection closed.
+[2025-11-18 12:59:34] [Client: 127.0.0.1:37672] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:59:34] [Client: 127.0.0.1:37672] [Type: Client] Connection closed before sending request.
+[2025-11-18 12:59:34] [Client: 127.0.0.1:37680] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 12:59:34] [Client: 127.0.0.1:37680] [Type: Client] REQ: STREAM_FILE for 'fix.txt'
+[2025-11-18 12:59:35] [Client: 127.0.0.1:37680] [Type: Client] RES: Successfully streamed file 'fix.txt'.
+[2025-11-18 12:59:35] [Client: 127.0.0.1:37680] [Type: Client] INFO: Connection closed.
+[2025-11-18 13:00:25] [Client: 127.0.0.1:48740] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 13:00:25] [Client: 127.0.0.1:48756] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 13:00:25] [Client: 127.0.0.1:48740] [Type: Client] Connection closed before sending request.
+[2025-11-18 13:00:25] [Client: 127.0.0.1:48756] [Type: Client] REQ: WRITE_START for 'fix.txt', sentence 5
+[2025-11-18 13:00:25] [Client: 127.0.0.1:48756] [Type: Client] ACK: WRITE_START for 'fix.txt'. Entering session.
+[2025-11-18 13:00:41] [Client: 127.0.0.1:48756] [Type: Client] ACK: WRITE for 'fix.txt' success (sent 5, word 0).
+[2025-11-18 13:00:44] [Client: 127.0.0.1:48756] [Type: Client] REQ: ETIRW for 'fix.txt'. Finalizing changes.
+[2025-11-18 13:00:44] [Client: 127.0.0.1:48756] [Type: Client] ACK: Successfully saved changes to 'fix.txt'.
+[2025-11-18 13:00:44] [Client: 127.0.0.1:48756] [Type: Client] INFO: Write session for 'fix.txt' ended.
+[2025-11-18 13:00:44] [Client: 127.0.0.1:48756] [Type: Client] INFO: Connection closed.
+[2025-11-18 13:00:53] [Client: 127.0.0.1:45298] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 13:00:53] [Client: 127.0.0.1:45298] [Type: Client] Connection closed before sending request.
+[2025-11-18 13:00:53] [Client: 127.0.0.1:45308] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 13:00:53] [Client: 127.0.0.1:45308] [Type: Client] REQ: WRITE_START for 'fix.txt', sentence 6
+[2025-11-18 13:00:53] [Client: 127.0.0.1:45308] [Type: Client] ACK: WRITE_START for 'fix.txt'. Entering session.
+[2025-11-18 13:01:00] [Client: 127.0.0.1:45308] [Type: Client] ACK: WRITE for 'fix.txt' success (sent 6, word 0).
+[2025-11-18 13:01:03] [Client: 127.0.0.1:45308] [Type: Client] REQ: ETIRW for 'fix.txt'. Finalizing changes.
+[2025-11-18 13:01:03] [Client: 127.0.0.1:45308] [Type: Client] ACK: Successfully saved changes to 'fix.txt'.
+[2025-11-18 13:01:03] [Client: 127.0.0.1:45308] [Type: Client] INFO: Write session for 'fix.txt' ended.
+[2025-11-18 13:01:03] [Client: 127.0.0.1:45308] [Type: Client] INFO: Connection closed.
+[2025-11-18 13:01:08] [Client: 127.0.0.1:52180] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 13:01:08] [Client: 127.0.0.1:52180] [Type: Client] Connection closed before sending request.
+[2025-11-18 13:01:08] [Client: 127.0.0.1:52182] [Type: Client] INFO: Accepted new connection.
+[2025-11-18 13:01:08] [Client: 127.0.0.1:52182] [Type: Client] REQ: READ_FILE for 'fix.txt'
+[2025-11-18 13:01:08] [Client: 127.0.0.1:52182] [Type: Client] RES: Successfully sent file 'fix.txt'.
+[2025-11-18 13:01:08] [Client: 127.0.0.1:52182] [Type: Client] INFO: Connection closed.
