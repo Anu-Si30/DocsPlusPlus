@@ -14,8 +14,6 @@ void fetch_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
     int ss_sock;
     struct sockaddr_in ss_addr;
 
-    printf("--- Connecting to Storage Server at %s:%d...\n", ss_ip, ss_port);
-
     if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Client (SS): socket creation failed");
         return;
@@ -67,11 +65,7 @@ void stream_file_from_ss(const char* ss_ip, int ss_port, const char* filename) {
     int ss_sock;
     struct sockaddr_in ss_addr;
 
-    printf("--- Connecting to Storage Server at %s:%d for streaming...\n", ss_ip, ss_port);
-
     if ((ss_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("Client (SS-Stream): socket creation failed");
-        return;
     }
 
     ss_addr.sin_family = AF_INET;

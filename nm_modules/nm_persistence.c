@@ -50,9 +50,33 @@ void save_registry_to_disk_unsafe() {
         }
     }
 
+    // 4. Write folder count
+    extern int g_num_folders;
+    if (fwrite(&g_num_folders, sizeof(int), 1, file) != 1) {
+        perror("NM: (Persistence) Failed to write folder count to registry");
+        log_to_file("Internal", "NameServer", "CRITICAL: (Persistence) Failed to write folder count to registry: %m");
+        fclose(file);
+        return;
+    }
+
+    // 5. Write each FolderNode
+    extern FolderNode* g_folder_list;
+    if (g_num_folders > 0) {
+        FolderNode* current = g_folder_list;
+        while (current != NULL) {
+            if (fwrite(current, sizeof(FolderNode), 1, file) != 1) {
+                perror("NM: (Persistence) Failed to write folder data to registry");
+                log_to_file("Internal", "NameServer", "CRITICAL: (Persistence) Failed to write folder data to registry: %m");
+                fclose(file);
+                return;
+            }
+            current = current->next;
+        }
+    }
+
     fclose(file);
-    printf("NM: (Persistence) System state saved to disk (%d files).\n", g_num_files);
-    log_to_file("Internal", "NameServer", "INFO: (Persistence) System state saved to disk (%d files).", g_num_files);
+    printf("NM: (Persistence) System state saved to disk (%d files, %d folders).\n", g_num_files, g_num_folders);
+    log_to_file("Internal", "NameServer", "INFO: (Persistence) System state saved to disk (%d files, %d folders).", g_num_files, g_num_folders);
 }
 
 /*
@@ -99,7 +123,28 @@ void load_registry_from_disk() {
         hash_map_insert_unsafe(temp_file);
     }
 
+    // Read folder count
+    extern int g_num_folders;
+    extern FolderNode* g_folder_list;
+    int folder_count = 0;
+    if (fread(&folder_count, sizeof(int), 1, file) == 1 && folder_count >= 0) {
+        // Read each FolderNode and insert it into the folder list
+        for (int i = 0; i < folder_count; i++) {
+            FolderNode* temp_folder = (FolderNode*)malloc(sizeof(FolderNode));
+            if (fread(temp_folder, sizeof(FolderNode), 1, file) != 1) {
+                perror("NM: (Persistence) Failed to read folder data. Halting folder load");
+                log_to_file("Internal", "NameServer", "ERROR: (Persistence) Failed to read folder data. Halting folder load.");
+                free(temp_folder);
+                break;
+            }
+            // Insert at head of list
+            temp_folder->next = g_folder_list;
+            g_folder_list = temp_folder;
+            g_num_folders++;
+        }
+    }
+
     fclose(file);
-    printf("NM: (Persistence) Successfully loaded %d files from registry.\n", g_num_files);
-    log_to_file("Internal", "NameServer", "INFO: (Persistence) Successfully loaded %d files from registry.", g_num_files);
+    printf("NM: (Persistence) Successfully loaded %d files and %d folders from registry.\n", g_num_files, g_num_folders);
+    log_to_file("Internal", "NameServer", "INFO: (Persistence) Successfully loaded %d files and %d folders from registry.", g_num_files, g_num_folders);
 }
