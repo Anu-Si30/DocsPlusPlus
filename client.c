@@ -208,8 +208,9 @@ void write_session_to_ss(int nm_socket, const char* ss_ip, int ss_port, const ch
 
 /*
  * Connects to the Name Server and returns the socket descriptor.
+ * nm_ip: IP address of the Name Server (e.g., "127.0.0.1" or "192.168.1.100")
  */
-int connect_to_name_server() {
+int connect_to_name_server(const char* nm_ip) {
     int sock;
     struct sockaddr_in nm_addr;
 
@@ -220,7 +221,7 @@ int connect_to_name_server() {
 
     nm_addr.sin_family = AF_INET;
     nm_addr.sin_port = htons(NAME_SERVER_PORT);
-    if (inet_pton(AF_INET, "127.0.0.1", &nm_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, nm_ip, &nm_addr.sin_addr) <= 0) {
         perror("Client: invalid address");
         close(sock);
         return -1;
@@ -232,7 +233,7 @@ int connect_to_name_server() {
         return -1;
     }
 
-    printf("Connected to Name Server!\n");
+    printf("Connected to Name Server at %s:%d!\n", nm_ip, NAME_SERVER_PORT);
     return sock;
 }
 
@@ -350,7 +351,13 @@ void command_loop(int nm_socket, const char* username) {
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    // Parse command-line arguments
+    const char* nm_ip = "127.0.0.1";  // Default to localhost
+    if (argc > 1) {
+        nm_ip = argv[1];
+    }
+
     char username[256];
 
     printf("Enter your username: ");
@@ -360,7 +367,7 @@ int main() {
     }
     username[strcspn(username, "\n")] = 0; // Remove trailing newline
 
-    int nm_socket = connect_to_name_server();
+    int nm_socket = connect_to_name_server(nm_ip);
     if (nm_socket < 0) {
         exit(EXIT_FAILURE);
     }

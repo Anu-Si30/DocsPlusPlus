@@ -17,6 +17,7 @@
 int SS_NM_PORT = 9001;       // Port for NM to connect to
 int SS_CLIENT_PORT = 9002;   // Port for Clients to connect to
 char SS_STORAGE_DIR[256] = "ss_storage/";  // Storage directory
+char NM_IP_ADDR[INET_ADDRSTRLEN] = "127.0.0.1";  // Name Server IP address (default localhost)
 
 // Use module-provided types, logging, and document helpers
 #include "ss_modules/ss_types.h"
@@ -918,7 +919,7 @@ void register_with_name_server() {
     }
     nm_addr.sin_family = AF_INET;
     nm_addr.sin_port = htons(NAME_SERVER_PORT);
-    if (inet_pton(AF_INET, "127.0.0.1", &nm_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, NM_IP_ADDR, &nm_addr.sin_addr) <= 0) {
         perror("SS: invalid address");
         exit(EXIT_FAILURE);
     }
@@ -927,8 +928,8 @@ void register_with_name_server() {
         exit(EXIT_FAILURE);
     }
     // --- **** MODIFIED **** ---
-    printf("SS: Connected to Name Server.\n");
-    log_to_file("127.0.0.1", "System", "INFO: (NM-Registration) Connected to Name Server.");
+    printf("SS: Connected to Name Server at %s:%d.\n", NM_IP_ADDR, NAME_SERVER_PORT);
+    log_to_file(NM_IP_ADDR, "System", "INFO: (NM-Registration) Connected to Name Server.");
     
     int offset = sprintf(registration_msg, "REGISTER_SS %d %d", 
                          SS_NM_PORT, SS_CLIENT_PORT);
@@ -984,7 +985,7 @@ void* send_heartbeats(void* arg) {
         
         nm_addr.sin_family = AF_INET;
         nm_addr.sin_port = htons(NAME_SERVER_PORT);
-        if (inet_pton(AF_INET, "127.0.0.1", &nm_addr.sin_addr) <= 0) {
+        if (inet_pton(AF_INET, NM_IP_ADDR, &nm_addr.sin_addr) <= 0) {
             close(sock);
             continue;
         }
@@ -1011,7 +1012,7 @@ void* send_heartbeats(void* arg) {
 }
 
 int main(int argc, char* argv[]) {
-    // Parse command-line arguments: ./storageserver <nm_port> <client_port> [storage_dir]
+    // Parse command-line arguments: ./storageserver <nm_port> <client_port> [storage_dir] [nm_ip]
     if (argc >= 3) {
         SS_NM_PORT = atoi(argv[1]);
         SS_CLIENT_PORT = atoi(argv[2]);
@@ -1023,14 +1024,18 @@ int main(int argc, char* argv[]) {
                 strncat(SS_STORAGE_DIR, "/", sizeof(SS_STORAGE_DIR) - len - 1);
             }
         }
-        printf("SS: Starting with NM Port=%d, Client Port=%d, Storage Dir=%s\n", 
-               SS_NM_PORT, SS_CLIENT_PORT, SS_STORAGE_DIR);
+        if (argc >= 5) {
+            snprintf(NM_IP_ADDR, sizeof(NM_IP_ADDR), "%s", argv[4]);
+        }
+        printf("SS: Starting with NM Port=%d, Client Port=%d, Storage Dir=%s, NM IP=%s\n", 
+               SS_NM_PORT, SS_CLIENT_PORT, SS_STORAGE_DIR, NM_IP_ADDR);
     } else if (argc > 1) {
-        printf("Usage: %s [nm_port client_port [storage_dir]]\n", argv[0]);
+        printf("Usage: %s [nm_port client_port [storage_dir] [nm_ip]]\n", argv[0]);
         printf("  nm_port      - Port for Name Server communication (default: 9001)\n");
         printf("  client_port  - Port for Client communication (default: 9002)\n");
         printf("  storage_dir  - Directory for file storage (default: ss_storage/)\n");
-        printf("\nStarting with default ports...\n");
+        printf("  nm_ip        - Name Server IP address (default: 127.0.0.1)\n");
+        printf("\nStarting with default configuration...\n");
     }
     
     register_with_name_server();

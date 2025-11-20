@@ -47,6 +47,8 @@ The system consists of three main components:
 
 ### Starting the System
 
+#### Local Deployment (Single Machine)
+
 1. **Start the Name Server:**
    ```bash
    ./nameserver
@@ -67,6 +69,60 @@ The system consists of three main components:
    ./client
    ```
    You will be prompted to enter your username.
+
+#### Multi-Device Deployment (Network)
+
+This system supports distributed deployment across multiple physical devices.
+
+1. **Start the Name Server** (on device with IP `192.168.1.100`):
+   ```bash
+   ./nameserver
+   ```
+   **Note:** The Name Server will automatically display all available IP addresses at startup:
+   ```
+   ========================================
+   Name Server Network Information
+   ========================================
+   Port: 8080
+   
+   Available IP Addresses:
+   ----------------------------------------
+     lo         127.0.0.1 (localhost)
+     wlan0      192.168.1.100 ← Use this for multi-device
+   ----------------------------------------
+   
+   To connect from other devices, use:
+     Storage Server: ./storageserver 9001 9002 ss1 <IP>
+     Client:         ./client <IP>
+   ========================================
+   ```
+   Use the non-localhost IP address shown for multi-device deployment.
+
+2. **Start Storage Server(s)** (on any device):
+   ```bash
+   # Specify Name Server IP as 4th argument
+   ./storageserver 9001 9002 ss1 192.168.1.100
+   ./storageserver 9003 9004 ss2 192.168.1.100
+   ```
+   **Syntax:** `./storageserver <nm_port> <client_port> [storage_dir] [nm_ip]`
+   - `nm_ip`: IP address of the Name Server (defaults to 127.0.0.1 if omitted)
+
+3. **Start Client(s)** (on any device):
+   ```bash
+   # Specify Name Server IP as argument
+   ./client 192.168.1.100
+   ```
+   **Syntax:** `./client [nm_ip]`
+   - `nm_ip`: IP address of the Name Server (defaults to 127.0.0.1 if omitted)
+   
+   You will be prompted to enter your username.
+
+**Network Requirements:**
+- All devices must be on the same network or have network connectivity
+- Firewall rules must allow TCP traffic on ports used (9000, 9001, 9002, etc.)
+- Name Server IP must be reachable from all Storage Servers and Clients
+
+**For detailed multi-device setup:** See [MULTI_DEVICE_DEPLOYMENT.md](markdowns/MULTI_DEVICE_DEPLOYMENT.md)
 
 ### Client Interface
 

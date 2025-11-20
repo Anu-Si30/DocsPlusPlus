@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <time.h>     
 #include <stdarg.h>  // For va_list
+#include <ifaddrs.h> // For getifaddrs (IP detection)
 #include "common.h"
 
 // Include modular headers
@@ -48,6 +49,44 @@ pthread_mutex_t g_log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 // --- (Hash map, cache, logging, and persistence functions are now in nm_modules/) ---
+
+/*
+ * Print the primary network IP address for multi-device connections
+ */
+void print_server_ip() {
+    struct ifaddrs *ifaddr, *ifa;
+    char ip[INET_ADDRSTRLEN];
+    int found = 0;
+
+    if (getifaddrs(&ifaddr) == -1) {
+        return;
+    }
+
+    // Find first non-localhost IPv4 address
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL) {
+            continue;
+        }
+
+        if (ifa->ifa_addr->sa_family == AF_INET) {
+            struct sockaddr_in *addr = (struct sockaddr_in *)ifa->ifa_addr;
+            inet_ntop(AF_INET, &addr->sin_addr, ip, sizeof(ip));
+            
+            // Skip localhost
+            if (strcmp(ip, "127.0.0.1") != 0) {
+                printf("Name Server IP for multi-device: %s\n", ip);
+                found = 1;
+                break;
+            }
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    
+    if (!found) {
+        printf("Name Server IP: 127.0.0.1 (localhost only)\n");
+    }
+}
 
 /*
  * Helper function to find a file by path (folder/filename or just filename)
@@ -3445,6 +3484,7 @@ int main() {
     }
 
     printf("Name Server listening on port %d\n", NAME_SERVER_PORT);
+    print_server_ip();
     log_to_file("Internal", "NameServer", "INFO: Name Server listening on port %d", NAME_SERVER_PORT);
 
     while (1) {
